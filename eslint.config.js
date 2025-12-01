@@ -1,5 +1,6 @@
 import eslint from '@eslint/js';
 import tseslint from 'typescript-eslint';
+import vitest from '@vitest/eslint-plugin';
 
 export default tseslint.config(
   // Ignore patterns first
@@ -62,7 +63,7 @@ export default tseslint.config(
       'no-var': 'error',
     },
   },
-
+  
   // Test files configuration
   {
     files: ['src/**/__tests__/**/*.test.ts'],
@@ -83,10 +84,24 @@ export default tseslint.config(
       
       // Vitest specific rules
       ...vitest.configs.recommended.rules,
-      'vitest/expect-expect': 'error',
+      'vitest/expect-expect': ['error', {
+        assertFunctionNames: ['expect', 'assert'],
+        additionalTestBlockFunctions: ['testIf'],
+      }],
+      'vitest/no-standalone-expect': ['error', {
+        additionalTestBlockFunctions: ['testIf'],
+      }],
       'vitest/no-disabled-tests': 'warn',
       'vitest/no-focused-tests': 'error',
-      'vitest/valid-expect': 'error',
+      'vitest/valid-expect': ['error', {
+        asyncMatchers: ['toResolve', 'toReject'],
+        minArgs: 1,
+        maxArgs: 1,
+      }],
+      'vitest/valid-title': ['error', {
+        ignoreTypeOfDescribeName: false,
+        disallowedWords: [],
+      }],
     },
     languageOptions: {
       globals: {
@@ -94,7 +109,7 @@ export default tseslint.config(
       },
     },
   },
-
+  
   // Test utilities configuration
   {
     files: ['src/**/__tests__/**/testUtilities.ts'],
@@ -106,4 +121,3 @@ export default tseslint.config(
     },
   },
 );
-

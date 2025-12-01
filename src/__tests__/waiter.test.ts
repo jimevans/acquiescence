@@ -98,7 +98,7 @@ describe('TimeoutWaiter', () => {
     }, 1000);
 
     it('should work with complex return types', async () => {
-      type Result = { data: string; code: number };
+      interface Result { data: string; code: number };
       const expectedResult: Result = { data: 'test', code: 200 };
       const condition = () => expectedResult;
 
@@ -643,7 +643,7 @@ describe('TimeoutWaiter', () => {
     }, 1000);
 
     it('should enforce timeout based on performance.now()', async () => {
-      let checkTimes: number[] = [];
+      const checkTimes: number[] = [];
       const startTime = performance.now();
       
       const condition = () => {
@@ -657,8 +657,13 @@ describe('TimeoutWaiter', () => {
       
       // Verify that checks happened and timeout was enforced
       expect(checkTimes.length).toBeGreaterThan(1);
-      // Last check should be around or just before 50ms
-      expect(checkTimes[checkTimes.length - 1]).toBeLessThan(60);
+      // Last check should be reasonably close to the timeout.
+      // We allow a generous margin (100ms for a 50ms timeout) because:
+      // - setTimeout is not precise (HTML5 spec allows 4ms+ delays)
+      // - Delays compound over multiple intervals
+      // - Browsers may throttle timers differently (especially Firefox)
+      // - Event loop delays can affect timing
+      expect(checkTimes[checkTimes.length - 1]).toBeLessThan(100);
     }, 1000);
   });
 
@@ -834,7 +839,7 @@ describe('RequestAnimationFrameWaiter', () => {
     }, 1000);
 
     it('should work with complex return types', async () => {
-      type Result = { data: string; code: number };
+      interface Result { data: string; code: number };
       const expectedResult: Result = { data: 'test', code: 200 };
       const condition = () => expectedResult;
 
@@ -1401,7 +1406,7 @@ describe('RequestAnimationFrameWaiter', () => {
     }, 1000);
 
     it('should check timeout against performance.now()', async () => {
-      let checkTimes: number[] = [];
+      const checkTimes: number[] = [];
       const condition = () => {
         checkTimes.push(performance.now());
         return false;

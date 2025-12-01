@@ -4,15 +4,34 @@ import { webdriverio } from '@vitest/browser-webdriverio';
 // Get browser from environment variable, default to chrome
 const browser = process.env.VITEST_BROWSER || 'chrome';
 
+// Check if we should run in headless mode
+// Headless if: explicitly set via env var, or in CI, or not explicitly disabled
+const shouldRunHeadless = () => {
+  if (process.env.VITEST_HEADLESS !== undefined) {
+    return process.env.VITEST_HEADLESS !== 'false';
+  }
+  // Default to headless in CI environments
+  return process.env.CI === 'true';
+};
+
 // Browser-specific capabilities
 const getBrowserCapabilities = () => {
+  const isHeadless = shouldRunHeadless();
+  
   switch (browser) {
     case 'firefox':
+      const firefoxArgs = isHeadless ? ['-headless'] : [];
       return {
         'moz:firefoxOptions': {
-          args: [
-            '-headless',
-          ]
+          args: firefoxArgs,
+          prefs: {
+            // Improve rendering performance in headless mode
+            'gfx.webrender.all': true,
+            'layers.acceleration.force-enabled': true,
+            // Reduce throttling of timers and RAF in background
+            'dom.min_background_timeout_value': 4,
+            'dom.timeout.throttling_delay': 0,
+          }
         }
       };
     case 'safari':
@@ -24,13 +43,19 @@ const getBrowserCapabilities = () => {
       };
     case 'chrome':
     default:
+      const chromeArgs = [
+        '--disable-dev-shm-usage',
+        '--no-sandbox',
+        '--disable-gpu',
+      ];
+      
+      if (isHeadless) {
+        chromeArgs.unshift('--headless=new');
+      }
+      
       return {
         'goog:chromeOptions': {
-          args: [
-            '--disable-dev-shm-usage',
-            '--no-sandbox',
-            '--disable-gpu',
-          ]
+          args: chromeArgs
         }
       };
   }
@@ -46,8 +71,9 @@ export default defineConfig({
       enabled: false,
       provider: webdriverio({
         // Configure webdriver options for proper cleanup
-        connectionRetryCount: 0,
-        connectionRetryTimeout: 5000,
+        // Firefox in CI needs more connection time
+        connectionRetryCount: 3,
+        connectionRetryTimeout: browser === 'firefox' ? 60000 : 30000,
         capabilities: getBrowserCapabilities()
       }),
       headless: true,
@@ -63,10 +89,14 @@ export default defineConfig({
     include: ['src/**/__tests__/**/*.test.ts'],
     
     // Increase timeout for browser tests
-    testTimeout: 30000,
+    // Firefox in CI needs more time for RAF-based stability checks
+    testTimeout: browser === 'firefox' && process.env.CI === 'true' ? 60000 : 30000,
+    
+    // Increase hook timeout for browser setup/teardown
+    hookTimeout: browser === 'firefox' && process.env.CI === 'true' ? 30000 : 10000,
     
     // Increase teardown timeout to allow proper cleanup
-    teardownTimeout: 5000,
+    teardownTimeout: 10000,
     
     // Configure coverage
     coverage: {
@@ -79,4 +109,3 @@ export default defineConfig({
     },
   },
 });
-
