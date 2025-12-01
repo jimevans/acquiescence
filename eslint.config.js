@@ -62,5 +62,48 @@ export default tseslint.config(
       'no-var': 'error',
     },
   },
+
+  // Test files configuration
+  {
+    files: ['src/**/__tests__/**/*.test.ts'],
+    plugins: {
+      vitest,
+    },
+    rules: {
+      // Relax some rules for tests
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-unsafe-argument': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-non-null-assertion': 'off',
+      '@typescript-eslint/unbound-method': 'off',
+      '@typescript-eslint/require-await': 'off',
+      'no-console': 'off',
+      
+      // Vitest specific rules
+      ...vitest.configs.recommended.rules,
+      'vitest/expect-expect': 'error',
+      'vitest/no-disabled-tests': 'warn',
+      'vitest/no-focused-tests': 'error',
+      'vitest/valid-expect': 'error',
+    },
+    languageOptions: {
+      globals: {
+        ...vitest.environments.env.globals,
+      },
+    },
+  },
+
+  // Test utilities configuration
+  {
+    files: ['src/**/__tests__/**/testUtilities.ts'],
+    rules: {
+      // This is a utility file, not a test file
+      'vitest/expect-expect': 'off',
+      'vitest/valid-title': 'off',
+      '@typescript-eslint/no-unused-expressions': 'off',
+    },
+  },
 );
 

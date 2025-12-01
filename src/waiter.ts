@@ -34,7 +34,7 @@ export class TimeoutWaiter<T> implements Waiter<T> {
    * @param timeoutInMilliseconds {number} The timeout in milliseconds. If omitted, the timeout is zero, implying the check will execute once.
    * @param pollIntervalsInMilliseconds {number[]} An array of the intervals in milliseconds to poll at. If omitted, the default interval of 100ms is used.
    */
-  constructor(condition: () => T | Promise<T>, timeoutInMilliseconds: number = 0, pollIntervalsInMilliseconds: number[] = [100]) {
+  constructor(condition: () => T | Promise<T>, timeoutInMilliseconds = 0, pollIntervalsInMilliseconds: number[] = [100]) {
     this.condition = condition;
     this.timeout = timeoutInMilliseconds;
     this.intervals = pollIntervalsInMilliseconds;
@@ -121,7 +121,7 @@ export class RequestAnimationFrameWaiter<T> implements Waiter<T> {
    * @param condition {() => T | Promise<T>} A Function testing the condition to poll for.
    * @param timeoutInMilliseconds {number} The timeout in milliseconds. If omitted, the timeout is zero, implying the check will execute once.
    */
-  constructor(condition: () => T | Promise<T>, timeoutInMilliseconds: number = 0) {
+  constructor(condition: () => T | Promise<T>, timeoutInMilliseconds = 0) {
     this.condition = condition;
     this.timeout = timeoutInMilliseconds;
   }

@@ -206,8 +206,9 @@ class ElementStateInspector {
     try {
       const result = await waiter.waitForCondition();
       // The waiter only resolves with a truthy value, so result will never be null here
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       return result!;
-    } catch (error) {
+    } catch {
       throw new Error('timeout waiting for interaction to be ready');
     }
   }

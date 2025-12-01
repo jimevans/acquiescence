@@ -213,7 +213,7 @@ class AriaUtilities {
    * @param isAncestor {boolean} Whether to check the element's ancestors. If omitted, defaults to false.
    * @returns {boolean} True if the element has an explicit ARIA disabled attribute; otherwise, false.
    */
-  hasExplicitAriaDisabled(element: Element | undefined, isAncestor: boolean = false): boolean {
+  hasExplicitAriaDisabled(element: Element | undefined, isAncestor = false): boolean {
     if (!element)
       return false;
     if (isAncestor || this.ariaDisabledRoles.includes(this.getAriaRole(element) ?? '')) {
