@@ -20,9 +20,18 @@ const getBrowserCapabilities = () => {
   
   switch (browser) {
     case 'firefox':
+      const firefoxArgs = isHeadless ? ['-headless'] : [];
       return {
         'moz:firefoxOptions': {
-          args: isHeadless ? ['-headless'] : []
+          args: firefoxArgs,
+          prefs: {
+            // Improve rendering performance in headless mode
+            'gfx.webrender.all': true,
+            'layers.acceleration.force-enabled': true,
+            // Reduce throttling of timers and RAF in background
+            'dom.min_background_timeout_value': 4,
+            'dom.timeout.throttling_delay': 0,
+          }
         }
       };
     case 'safari':
@@ -62,8 +71,9 @@ export default defineConfig({
       enabled: false,
       provider: webdriverio({
         // Configure webdriver options for proper cleanup
+        // Firefox in CI needs more connection time
         connectionRetryCount: 3,
-        connectionRetryTimeout: 30000,
+        connectionRetryTimeout: browser === 'firefox' ? 60000 : 30000,
         capabilities: getBrowserCapabilities()
       }),
       headless: true,
@@ -79,10 +89,14 @@ export default defineConfig({
     include: ['src/**/__tests__/**/*.test.ts'],
     
     // Increase timeout for browser tests
-    testTimeout: 30000,
+    // Firefox in CI needs more time for RAF-based stability checks
+    testTimeout: browser === 'firefox' && process.env.CI === 'true' ? 60000 : 30000,
+    
+    // Increase hook timeout for browser setup/teardown
+    hookTimeout: browser === 'firefox' && process.env.CI === 'true' ? 30000 : 10000,
     
     // Increase teardown timeout to allow proper cleanup
-    teardownTimeout: 5000,
+    teardownTimeout: 10000,
     
     // Configure coverage
     coverage: {
