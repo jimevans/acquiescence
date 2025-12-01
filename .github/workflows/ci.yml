@@ -60,7 +60,7 @@ jobs:
       
       - name: Upload coverage to Codecov
         if: matrix.browser == 'chrome'
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5.5.1
         with:
           files: ./coverage/lcov.info
           flags: unittests
