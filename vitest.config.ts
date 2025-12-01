@@ -63,8 +63,8 @@ export default defineConfig({
       enabled: false,
       provider: webdriverio({
         // Configure webdriver options with better CI support
-        connectionRetryCount: 3,
-        connectionRetryTimeout: 30000,
+        connectionRetryCount: 0,
+        connectionRetryTimeout: 5000,
         capabilities: getBrowserCapabilities()
       }),
       headless: true,
