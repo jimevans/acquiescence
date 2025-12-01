@@ -657,8 +657,13 @@ describe('TimeoutWaiter', () => {
       
       // Verify that checks happened and timeout was enforced
       expect(checkTimes.length).toBeGreaterThan(1);
-      // Last check should be around or just before 50ms
-      expect(checkTimes[checkTimes.length - 1]).toBeLessThan(60);
+      // Last check should be reasonably close to the timeout.
+      // We allow a generous margin (100ms for a 50ms timeout) because:
+      // - setTimeout is not precise (HTML5 spec allows 4ms+ delays)
+      // - Delays compound over multiple intervals
+      // - Browsers may throttle timers differently (especially Firefox)
+      // - Event loop delays can affect timing
+      expect(checkTimes[checkTimes.length - 1]).toBeLessThan(100);
     }, 1000);
   });
 
