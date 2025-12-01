@@ -1,0 +1,22 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["src/index.ts"],
+  "out": "docs/public/api-reference",
+  "readme": "none",
+  "excludePrivate": true,
+  "excludeInternal": true,
+  "excludeProtected": false,
+  "githubPages": false,
+  "hideGenerator": true,
+  "cleanOutputDir": true,
+  "disableSources": false,
+  "includeVersion": true,
+  "entryPointStrategy": "expand",
+  "categoryOrder": ["Classes", "Types", "Functions", "*"],
+  "sort": ["source-order"],
+  "navigation": {
+    "includeCategories": true,
+    "includeGroups": true
+  }
+}
+

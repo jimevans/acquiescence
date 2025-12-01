@@ -52,7 +52,11 @@
     "test:browser:firefox:headed": "VITEST_BROWSER=firefox vitest run --browser.enabled=true --browser.headless=false",
     "test:browser:safari": "VITEST_BROWSER=safari vitest run --browser.enabled=true --browser.headless=false",
     "test:browser:safari:watch": "VITEST_BROWSER=safari vitest --browser.enabled=true",
-    "test:browser:safari:headed": "VITEST_BROWSER=safari vitest run --browser.enabled=true --browser.headless=false"
+    "test:browser:safari:headed": "VITEST_BROWSER=safari vitest run --browser.enabled=true --browser.headless=false",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "npm run docs:api && vitepress build docs",
+    "docs:preview": "vitepress preview docs",
+    "docs:api": "typedoc"
   },
   "devDependencies": {
     "@types/jsdom": "^27.0.0",
@@ -67,8 +71,10 @@
     "esbuild": "^0.27.0",
     "eslint": "^9.39.1",
     "jsdom": "^27.2.0",
+    "typedoc": "^0.28.15",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.48.0",
+    "vitepress": "^1.6.4",
     "vitest": "^4.0.14",
     "webdriverio": "^9.21.0"
   }
