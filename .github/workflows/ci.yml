@@ -31,13 +31,13 @@ jobs:
       
       - name: Setup Chrome
         if: matrix.browser == 'chrome'
-        uses: browser-actions/setup-chrome@v1
+        uses: browser-actions/setup-chrome@v2.1.0
         with:
           chrome-version: stable
       
       - name: Setup Firefox
         if: matrix.browser == 'firefox'
-        uses: browser-actions/setup-firefox@v1
+        uses: browser-actions/setup-firefox@v1.7.0
         with:
           firefox-version: latest
       
