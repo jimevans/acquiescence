@@ -1,0 +1,26 @@
+{
+  "cSpell.words": [
+    "contenteditable",
+    "contentinfo",
+    "describedby",
+    "doubleclick",
+    "dropeffect",
+    "fieldsets",
+    "flowto",
+    "focusability",
+    "haspopup",
+    "inview",
+    "keyshortcuts",
+    "labelledby",
+    "menuitemcheckbox",
+    "menuitemradio",
+    "needsscroll",
+    "notconnected",
+    "notinview",
+    "notready",
+    "roledescription",
+    "spinbutton",
+    "treegrid"
+  ],
+  "editor.tabSize": 2
+}

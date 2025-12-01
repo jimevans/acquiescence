@@ -1,0 +1,7 @@
+Acquiescence
+Copyright (c) Acquiescence Committers
+
+This software contains code derived from the Playwright project (https://github.com/microsoft/playwright),
+available under the Apache 2.0 license (https://github.com/microsoft/playwright/blob/master/LICENSE), and
+code derived from the Selenium project (https://github.com/SeleniumHQ/selenium), also available under the
+Apache 2.0 license (https://github.com/SeleniumHQ/selenium/blob/trunk/LICENSE).
