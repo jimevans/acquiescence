@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import AriaUtilities from '../ariaUtilities';
 import DOMUtilities from '../domUtilities';
+import { testIf, hasShadowDomSupport } from './testUtilities';
 
 // Polyfill CSS.escape for jsdom if it doesn't exist
 if (typeof CSS === 'undefined' || CSS.escape === undefined) {
@@ -1401,33 +1402,29 @@ describe('AriaUtilities', () => {
   });
 
   describe('Complex Scenarios', () => {
-    it('should handle nested shadow DOM elements', () => {
+    testIf(hasShadowDomSupport(), 'should handle nested shadow DOM elements', () => {
       // Note: jsdom has limited shadow DOM support, this tests the logic
       const host = document.createElement('div');
       container.appendChild(host);
       
-      if (host.attachShadow) {
-        const shadow = host.attachShadow({ mode: 'open' });
-        const button = document.createElement('button');
-        button.setAttribute('aria-disabled', 'true');
-        shadow.appendChild(button);
-        expect(ariaUtils.hasExplicitAriaDisabled(button)).toBe(true);
-      }
+      const shadow = host.attachShadow({ mode: 'open' });
+      const button = document.createElement('button');
+      button.setAttribute('aria-disabled', 'true');
+      shadow.appendChild(button);
+      expect(ariaUtils.hasExplicitAriaDisabled(button)).toBe(true);
     });
 
-    it('should handle aria-disabled inheritance across shadow boundaries', () => {
+    testIf(hasShadowDomSupport(), 'should handle aria-disabled inheritance across shadow boundaries', () => {
       const host = document.createElement('div');
       host.setAttribute('role', 'button');
       host.setAttribute('aria-disabled', 'true');
       container.appendChild(host);
 
-      if (host.attachShadow) {
-        const shadow = host.attachShadow({ mode: 'open' });
-        const inner = document.createElement('span');
-        shadow.appendChild(inner);
-        // aria-disabled should work across shadow boundaries
-        expect(ariaUtils.hasExplicitAriaDisabled(inner, true)).toBe(true);
-      }
+      const shadow = host.attachShadow({ mode: 'open' });
+      const inner = document.createElement('span');
+      shadow.appendChild(inner);
+      // aria-disabled should work across shadow boundaries
+      expect(ariaUtils.hasExplicitAriaDisabled(inner, true)).toBe(true);
     });
 
     it('should handle datalist reference with multiple IDs', () => {

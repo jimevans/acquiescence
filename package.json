@@ -25,6 +25,9 @@
   "files": [
     "dist"
   ],
+  "overrides": {
+    "esbuild": "^0.27.0"
+  },
   "scripts": {
     "build": "tsc --project tsconfig.build.json && npm run build:browser",
     "build:browser": "esbuild src/index.ts --bundle --format=iife --global-name=Acquiescence --outfile=dist/acquiescence.browser.js --sourcemap",    "dev": "tsc --project tsconfig.build.json --watch",

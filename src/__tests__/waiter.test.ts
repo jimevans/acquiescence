@@ -98,7 +98,7 @@ describe('TimeoutWaiter', () => {
     }, 1000);
 
     it('should work with complex return types', async () => {
-      type Result = { data: string; code: number };
+      interface Result { data: string; code: number };
       const expectedResult: Result = { data: 'test', code: 200 };
       const condition = () => expectedResult;
 
@@ -643,7 +643,7 @@ describe('TimeoutWaiter', () => {
     }, 1000);
 
     it('should enforce timeout based on performance.now()', async () => {
-      let checkTimes: number[] = [];
+      const checkTimes: number[] = [];
       const startTime = performance.now();
       
       const condition = () => {
@@ -834,7 +834,7 @@ describe('RequestAnimationFrameWaiter', () => {
     }, 1000);
 
     it('should work with complex return types', async () => {
-      type Result = { data: string; code: number };
+      interface Result { data: string; code: number };
       const expectedResult: Result = { data: 'test', code: 200 };
       const condition = () => expectedResult;
 
@@ -1401,7 +1401,7 @@ describe('RequestAnimationFrameWaiter', () => {
     }, 1000);
 
     it('should check timeout against performance.now()', async () => {
-      let checkTimes: number[] = [];
+      const checkTimes: number[] = [];
       const condition = () => {
         checkTimes.push(performance.now());
         return false;
