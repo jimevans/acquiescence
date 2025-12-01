@@ -4,6 +4,8 @@
 
 [![npm version](https://img.shields.io/npm/v/acquiescence.svg)](https://www.npmjs.com/package/acquiescence)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![CI](https://github.com/jimevans/acquiescence/actions/workflows/ci.yml/badge.svg)](https://github.com/jimevans/acquiescence/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/jimevans/acquiescence/graph/badge.svg?token=8S7FYOCILA)](https://codecov.io/gh/jimevans/acquiescence)
 
 ## Overview
 
