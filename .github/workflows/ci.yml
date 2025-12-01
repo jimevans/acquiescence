@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        browser: [chrome, firefox]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js (LTS)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Setup Chrome
+        if: matrix.browser == 'chrome'
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
+      
+      - name: Setup Firefox
+        if: matrix.browser == 'firefox'
+        uses: browser-actions/setup-firefox@v1
+        with:
+          firefox-version: latest
+      
+      - name: Run linting
+        run: npm run lint
+      
+      - name: Run tests (Node/jsdom)
+        run: npm run test:coverage
+      
+      - name: Run browser tests with ${{ matrix.browser }}
+        run: npm run test:browser:coverage
+        env:
+          VITEST_BROWSER: ${{ matrix.browser }}
+      
+      - name: Build project
+        run: npm run build
+      
+      - name: Build browser bundle
+        run: npm run build:browser
+      
+      - name: Upload coverage to Codecov
+        if: matrix.browser == 'chrome'
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage/lcov.info
+          flags: unittests
+          fail_ci_if_error: false
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      
+      - name: Archive coverage report
+        if: matrix.browser == 'chrome'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report-${{ matrix.browser }}
+          path: coverage/
+          retention-days: 30
+
