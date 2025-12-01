@@ -4,15 +4,25 @@ import { webdriverio } from '@vitest/browser-webdriverio';
 // Get browser from environment variable, default to chrome
 const browser = process.env.VITEST_BROWSER || 'chrome';
 
+// Check if we should run in headless mode
+// Headless if: explicitly set via env var, or in CI, or not explicitly disabled
+const shouldRunHeadless = () => {
+  if (process.env.VITEST_HEADLESS !== undefined) {
+    return process.env.VITEST_HEADLESS !== 'false';
+  }
+  // Default to headless in CI environments
+  return process.env.CI === 'true';
+};
+
 // Browser-specific capabilities
 const getBrowserCapabilities = () => {
+  const isHeadless = shouldRunHeadless();
+  
   switch (browser) {
     case 'firefox':
       return {
         'moz:firefoxOptions': {
-          args: [
-            '-headless',
-          ]
+          args: isHeadless ? ['-headless'] : []
         }
       };
     case 'safari':
@@ -24,13 +34,19 @@ const getBrowserCapabilities = () => {
       };
     case 'chrome':
     default:
+      const chromeArgs = [
+        '--disable-dev-shm-usage',
+        '--no-sandbox',
+        '--disable-gpu',
+      ];
+      
+      if (isHeadless) {
+        chromeArgs.unshift('--headless=new');
+      }
+      
       return {
         'goog:chromeOptions': {
-          args: [
-            '--disable-dev-shm-usage',
-            '--no-sandbox',
-            '--disable-gpu',
-          ]
+          args: chromeArgs
         }
       };
   }
@@ -46,8 +62,8 @@ export default defineConfig({
       enabled: false,
       provider: webdriverio({
         // Configure webdriver options for proper cleanup
-        connectionRetryCount: 0,
-        connectionRetryTimeout: 5000,
+        connectionRetryCount: 3,
+        connectionRetryTimeout: 30000,
         capabilities: getBrowserCapabilities()
       }),
       headless: true,
