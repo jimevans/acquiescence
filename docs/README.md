@@ -78,13 +78,15 @@ VitePress supports enhanced markdown features:
 
 #### Code Blocks with Syntax Highlighting
 
-\`\`\`typescript
+````
+```typescript
 const inspector = new ElementStateInspector();
-\`\`\`
+```
+````
 
 #### Custom Containers
 
-\`\`\`markdown
+```markdown
 ::: tip
 This is a tip
 :::
@@ -100,23 +102,23 @@ This is a danger message
 ::: info
 This is an info message
 :::
-\`\`\`
+```
 
 #### Code Groups
 
-\`\`\`markdown
+````markdown
 ::: code-group
 
-\`\`\`bash [npm]
+```bash [npm]
 npm install acquiescence
-\`\`\`
+```
 
-\`\`\`bash [yarn]
+```bash [yarn]
 yarn add acquiescence
-\`\`\`
+```
 
 :::
-\`\`\`
+````
 
 ### Adding New Pages
 
