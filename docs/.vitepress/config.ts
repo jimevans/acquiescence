@@ -4,7 +4,7 @@ import { defineConfig } from 'vitepress';
 export default defineConfig({
   title: 'Acquiescence',
   description: 'Library for querying and waiting for element states',
-  base: '/',
+  base: '/acquiescence/',
   ignoreDeadLinks: [
     // Ignore links to TypeDoc generated documentation
     /^\/api-reference\//
