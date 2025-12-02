@@ -1,6 +1,6 @@
 {
   "name": "acquiescence",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Library for querying and waiting for element states",
   "author": "Jim Evans",
   "license": "Apache-2.0",
