@@ -144,10 +144,10 @@ class ElementStateInspector {
    */
   async isInteractionReady(element: Element, interactionType: ElementInteractionType, hitPointOffset?: { x: number, y: number }): Promise<{ status: ElementInteractionReadyResult, interactionPoint?: { x: number, y: number } }> {
     const states: ElementState[] = ['stable', 'visible', 'inview'];
-    if (interactionType == 'click' || interactionType == 'doubleclick' || interactionType == 'hover' || interactionType == 'drag') {
+    if (interactionType === 'click' || interactionType === 'doubleclick' || interactionType === 'hover' || interactionType === 'drag') {
       states.push('enabled');
     }
-    if (interactionType == 'type' || interactionType == 'clear') {
+    if (interactionType === 'type' || interactionType === 'clear') {
       states.push('enabled', 'editable');
     }
     const result = await this.queryElementStates(element, states);
