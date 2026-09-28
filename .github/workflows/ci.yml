@@ -18,10 +18,10 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       
       - name: Setup Node.js (LTS)
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 'lts/*'
           cache: 'npm'
@@ -31,13 +31,13 @@ jobs:
       
       - name: Setup Chrome
         if: matrix.browser == 'chrome'
-        uses: browser-actions/setup-chrome@v2.1.0
+        uses: browser-actions/setup-chrome@v2.2.0
         with:
           chrome-version: stable
       
       - name: Setup Firefox
         if: matrix.browser == 'firefox'
-        uses: browser-actions/setup-firefox@v1.7.0
+        uses: browser-actions/setup-firefox@v1.7.2
         with:
           firefox-version: latest
       
@@ -55,12 +55,9 @@ jobs:
       - name: Build project
         run: npm run build
       
-      - name: Build browser bundle
-        run: npm run build:browser
-      
       - name: Upload coverage to Codecov
         if: matrix.browser == 'chrome'
-        uses: codecov/codecov-action@v5.5.1
+        uses: codecov/codecov-action@v7.1.1
         with:
           files: ./coverage/lcov.info
           flags: unittests
@@ -69,7 +66,7 @@ jobs:
       
       - name: Archive coverage report
         if: matrix.browser == 'chrome'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-report-${{ matrix.browser }}
           path: coverage/
