@@ -144,6 +144,35 @@ class DOMUtilities {
   }
 
   /**
+   * Gets the text of a node as it is rendered: text within an open shadow root rather than the shadow host's
+   * own children, the nodes assigned to a slot (or its fallback content when none are), and no text from
+   * script, style, or noscript elements. A closed shadow root cannot be read, so its host's children are used.
+   * @param node {Node} The node whose text to get.
+   * @returns {string} The text, with whitespace as it appears in the document.
+   */
+  getNodeText(node: Node): string {
+    if (node.nodeType === Node.TEXT_NODE) {
+      return (node as Text).data;
+    }
+
+    if (node.nodeType !== Node.ELEMENT_NODE) {
+      return '';
+    }
+
+    const element = node as Element;
+    if (['SCRIPT', 'STYLE', 'NOSCRIPT'].includes(this.getNormalizedElementTagName(element))) {
+      return '';
+    }
+
+    let children: ArrayLike<Node> = element.shadowRoot ? element.shadowRoot.childNodes : element.childNodes;
+    if (element instanceof HTMLSlotElement && element.assignedNodes().length > 0) {
+      children = element.assignedNodes();
+    }
+
+    return Array.from(children, (child) => this.getNodeText(child)).join('');
+  }
+
+  /**
    * Gets a value indicating whether an element is natively focusable.
    * @param element {Element} The element to check.
    * @returns {boolean} True if the element is natively focusable; otherwise, false.

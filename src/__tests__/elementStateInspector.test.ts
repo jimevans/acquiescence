@@ -49,6 +49,28 @@ describe('ElementStateInspector', () => {
     }
   });
 
+  describe('elementsContainText', () => {
+    it('should report, for each element, whether its text contains the string', () => {
+      container.innerHTML = '<p id="first">Sign in</p><p id="second">Register</p>';
+      const elements = [container.querySelector('#first')!, container.querySelector('#second')!];
+      expect(inspector.elementsContainText(elements, 'sign')).toEqual([true, false]);
+    });
+
+    it('should ignore case and treat runs of whitespace as one space', () => {
+      container.innerHTML = '<p>  Welcome   <b>back</b>,\n  friend  </p>';
+      expect(inspector.elementsContainText([container.querySelector('p')!], '  WELCOME back,  FRIEND ')).toEqual([true]);
+    });
+
+    it('should find empty text in every element', () => {
+      container.innerHTML = '<p></p>';
+      expect(inspector.elementsContainText([container.querySelector('p')!], '')).toEqual([true]);
+    });
+
+    it('should return no results for no elements', () => {
+      expect(inspector.elementsContainText([], 'anything')).toEqual([]);
+    });
+  });
+
   describe('isElementDisabled', () => {
     it('should return false for enabled buttons', () => {
       const button = document.createElement('button');

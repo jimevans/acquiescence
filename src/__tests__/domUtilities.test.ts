@@ -16,6 +16,57 @@ describe('DOMUtilities', () => {
     container.remove();
   });
 
+  describe('getNodeText', () => {
+    it('should return the text of a text node', () => {
+      expect(domUtils.getNodeText(document.createTextNode('plain'))).toBe('plain');
+    });
+
+    it('should join the text of descendants in document order', () => {
+      container.innerHTML = '<p>Hello, <b>bold</b> <i>world</i></p>';
+      expect(domUtils.getNodeText(container.querySelector('p')!)).toBe('Hello, bold world');
+    });
+
+    it('should ignore comments and the contents of script, style, and noscript elements', () => {
+      container.innerHTML = '<p>Before<!-- note --><script>code()</script><style>p {}</style><noscript>none</noscript>after</p>';
+      expect(domUtils.getNodeText(container.querySelector('p')!)).toBe('Beforeafter');
+    });
+
+    it('should return no text for nodes that are neither text nor elements', () => {
+      expect(domUtils.getNodeText(document.createComment('note'))).toBe('');
+    });
+
+    it('should read an open shadow root instead of the host\'s own children', () => {
+      const host = document.createElement('div');
+      host.textContent = 'light';
+      host.attachShadow({ mode: 'open' }).innerHTML = '<span>shadow</span>';
+      container.appendChild(host);
+      expect(domUtils.getNodeText(host)).toBe('shadow');
+    });
+
+    it('should read the host\'s own children when its shadow root is closed', () => {
+      const host = document.createElement('div');
+      host.textContent = 'light';
+      host.attachShadow({ mode: 'closed' }).innerHTML = '<span>shadow</span>';
+      container.appendChild(host);
+      expect(domUtils.getNodeText(host)).toBe('light');
+    });
+
+    it('should read the nodes assigned to a slot', () => {
+      const host = document.createElement('div');
+      host.innerHTML = '<span>assigned</span>';
+      host.attachShadow({ mode: 'open' }).innerHTML = 'before <slot>fallback</slot> after';
+      container.appendChild(host);
+      expect(domUtils.getNodeText(host)).toBe('before assigned after');
+    });
+
+    it('should read a slot\'s fallback content when nothing is assigned', () => {
+      const host = document.createElement('div');
+      host.attachShadow({ mode: 'open' }).innerHTML = 'before <slot>fallback</slot> after';
+      container.appendChild(host);
+      expect(domUtils.getNodeText(host)).toBe('before fallback after');
+    });
+  });
+
   describe('getNormalizedElementTagName', () => {
     it('should return uppercase tag name for standard elements', () => {
       const div = document.createElement('div');
