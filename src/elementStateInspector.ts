@@ -271,6 +271,19 @@ class ElementStateInspector {
   }
 
   /**
+   * Checks, for each of several elements, whether its rendered text contains a string. Text is compared ignoring
+   * case, with each run of whitespace treated as one space and whitespace at either end ignored.
+   * @param elements The elements to check.
+   * @param text The text to look for; empty text is contained in every element.
+   * @returns {boolean[]} For each element, in order, whether its text contains the string.
+   */
+  elementsContainText(elements: Element[], text: string): boolean[] {
+    const normalize = (value: string) => value.replace(/\s+/g, ' ').trim().toLowerCase();
+    const expected = normalize(text);
+    return elements.map((element) => normalize(this.domUtilities.getNodeText(element)).includes(expected));
+  }
+
+  /**
    * Checks if an element is disabled.
    * @param element The element to check.
    * @returns {boolean} A boolean indicating if the element is disabled.
