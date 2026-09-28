@@ -231,7 +231,7 @@ class ElementStateInspector {
       if (!nearestSelect) {
         return undefined;
       }
-      return this.getElementInViewPortRect(nearestSelect as Element);
+      return this.getElementInViewPortRect(nearestSelect);
     }
 
     const entry = await this.checkElementViewPortIntersection(element);
@@ -252,7 +252,7 @@ class ElementStateInspector {
       if (!nearestSelect) {
         return false;
       }
-      return this.isElementInViewPort(nearestSelect as Element);
+      return this.isElementInViewPort(nearestSelect);
     }
     const entry = await this.checkElementViewPortIntersection(element);
     if (!entry) {

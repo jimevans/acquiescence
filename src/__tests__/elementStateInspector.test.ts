@@ -480,9 +480,7 @@ describe('ElementStateInspector', () => {
       const button = document.createElement('button');
       container.appendChild(button);
 
-      await expect(async () => {
-        await inspector.queryElementState(button, 'editable');
-      }).rejects.toThrow('Element is not an <input>, <textarea>, <select> or [contenteditable]');
+      await expect(inspector.queryElementState(button, 'editable')).rejects.toThrow('Element is not an <input>, <textarea>, <select> or [contenteditable]');
     });
   });
 
@@ -555,9 +553,7 @@ describe('ElementStateInspector', () => {
       const button = document.createElement('button');
       container.appendChild(button);
 
-      await expect(async () => {
-        await inspector.queryElementState(button, 'invalid' as any);
-      }).rejects.toThrow('Unexpected element state "invalid"');
+      await expect(inspector.queryElementState(button, 'invalid' as any)).rejects.toThrow('Unexpected element state "invalid"');
     });
   });
 
@@ -1126,9 +1122,7 @@ describe('ElementStateInspector', () => {
     testIf(isNativeDom(), 'should throw for disconnected elements', async () => {
       const button = document.createElement('button');
 
-      await expect(async () => {
-        await inspector.isInteractionReady(button, 'click');
-      }).rejects.toThrow('element not connected');
+      await expect(inspector.isInteractionReady(button, 'click')).rejects.toThrow('element not connected');
     });
   });
 
@@ -1153,9 +1147,7 @@ describe('ElementStateInspector', () => {
       button.style.display = 'none';
       container.appendChild(button);
 
-      await expect(async () => {
-        await inspector.waitForInteractionReady(button, 'click', 50);
-      }).rejects.toThrow('timeout waiting for interaction to be ready');
+      await expect(inspector.waitForInteractionReady(button, 'click', 50)).rejects.toThrow('timeout waiting for interaction to be ready');
     });
 
     testIf(isNativeDom(), 'should poll until element becomes ready', async () => {
@@ -1245,9 +1237,7 @@ describe('ElementStateInspector', () => {
       button.style.display = 'none';
       container.appendChild(button);
 
-      await expect(async () => {
-        await inspector.waitForInteractionReady(button, 'click', 50);
-      }).rejects.toThrow('timeout waiting for interaction to be ready');
+      await expect(inspector.waitForInteractionReady(button, 'click', 50)).rejects.toThrow('timeout waiting for interaction to be ready');
       
       // The test verifies that:
       // 1. Timeout error is properly thrown
@@ -1268,9 +1258,7 @@ describe('ElementStateInspector', () => {
       button.style.display = 'none';
       container.appendChild(button);
 
-      await expect(async () => {
-        await inspector.waitForInteractionReady(button, 'click', 50);
-      }).rejects.toThrow('timeout waiting for interaction to be ready');
+      await expect(inspector.waitForInteractionReady(button, 'click', 50)).rejects.toThrow('timeout waiting for interaction to be ready');
       
       // The finally block has executed, including the defensive clearTimeout logic
     }, 10000);
