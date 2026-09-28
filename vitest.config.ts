@@ -80,11 +80,12 @@ export default defineConfig({
       instances: [
         { browser: browser as 'chrome' | 'firefox' | 'safari' }
       ],
-      // Prevent file handle leaks by running tests sequentially
-      fileParallelism: false,
-      // Isolate each test file in its own browser context
-      isolate: false,
     },
+
+    // Prevent file handle leaks by running tests sequentially
+    fileParallelism: false,
+    // Run all test files in a shared context rather than isolating each one
+    isolate: false,
     
     include: ['src/**/__tests__/**/*.test.ts'],
     

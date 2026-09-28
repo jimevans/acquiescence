@@ -343,7 +343,7 @@ describe('DOMUtilities', () => {
             return fieldset;
           }
           return originalClosest(selector);
-        } as typeof input.closest;
+        };
 
         // This will now execute the fieldset check since closest returns a non-null fieldset
         expect(domUtils.isNativelyDisabled(input)).toBe(true);
@@ -371,7 +371,7 @@ describe('DOMUtilities', () => {
             return fieldset;
           }
           return originalClosest(selector);
-        } as typeof input.closest;
+        };
 
         // This executes the legend check:
         // - querySelector finds the legend
