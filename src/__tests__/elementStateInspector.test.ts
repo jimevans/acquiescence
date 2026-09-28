@@ -71,6 +71,67 @@ describe('ElementStateInspector', () => {
     });
   });
 
+  describe('elementsMatchAriaStates', () => {
+    it('should report, for each element, whether it has every given state', () => {
+      container.innerHTML = '<input type="checkbox" checked><input type="checkbox"><button aria-pressed="true" aria-expanded="true">b</button>';
+      const elements = Array.from(container.children);
+      expect(inspector.elementsMatchAriaStates(elements, { checked: true })).toEqual([true, false, false]);
+      expect(inspector.elementsMatchAriaStates(elements, { checked: false })).toEqual([false, true, false]);
+      expect(inspector.elementsMatchAriaStates(elements, { pressed: true, expanded: true })).toEqual([false, false, true]);
+    });
+
+    it('should check selected, level, and disabled', () => {
+      container.innerHTML = '<div role="tab" aria-selected="true">t</div><h2>h</h2><button disabled>b</button>';
+      const elements = Array.from(container.children);
+      expect(inspector.elementsMatchAriaStates(elements, { selected: true })).toEqual([true, false, false]);
+      expect(inspector.elementsMatchAriaStates(elements, { level: 2 })).toEqual([false, true, false]);
+      expect(inspector.elementsMatchAriaStates(elements, { disabled: true })).toEqual([false, false, true]);
+    });
+
+    it('should match every element when no state is given', () => {
+      container.innerHTML = '<p>p</p>';
+      expect(inspector.elementsMatchAriaStates([container.firstElementChild!], {})).toEqual([true]);
+    });
+  });
+
+  describe('findElementsByLabel', () => {
+    beforeEach(() => {
+      container.innerHTML = `
+        <label for="email">  Email   address </label><input id="email">
+        <label>Password <input id="password" type="password"></label>
+        <span id="caption">Search the site</span><input id="search" aria-labelledby="caption">
+        <button id="close" aria-label="Close dialog">x</button>
+        <button id="blank" aria-label="  ">Blank</button>
+        <input id="unlabelled">
+        <div id="section"><label for="nested">Nested field</label><input id="nested"></div>`;
+    });
+
+    const ids = (elements: Element[]) => elements.map((element) => element.id);
+
+    it('should find elements by native labels, aria-labelledby, and aria-label, ignoring case', () => {
+      expect(ids(inspector.findElementsByLabel([document], 'EMAIL', false))).toEqual(['email']);
+      expect(ids(inspector.findElementsByLabel([document], 'password', false))).toEqual(['password']);
+      expect(ids(inspector.findElementsByLabel([document], 'search', false))).toEqual(['search']);
+      expect(ids(inspector.findElementsByLabel([document], 'close', false))).toEqual(['close']);
+    });
+
+    it('should compare with whitespace collapsed, and match the whole label with case when exact', () => {
+      expect(ids(inspector.findElementsByLabel([document], 'Email address', true))).toEqual(['email']);
+      expect(ids(inspector.findElementsByLabel([document], 'email address', true))).toEqual([]);
+      expect(ids(inspector.findElementsByLabel([document], 'Email', true))).toEqual([]);
+    });
+
+    it('should ignore a blank aria-label', () => {
+      expect(ids(inspector.findElementsByLabel([document], '', true))).toEqual([]);
+    });
+
+    it('should search within each scope, finding an element once', () => {
+      const section = container.querySelector('#section')!;
+      expect(ids(inspector.findElementsByLabel([section, section], 'field', false))).toEqual(['nested']);
+      expect(ids(inspector.findElementsByLabel([section], 'email', false))).toEqual([]);
+    });
+  });
+
   describe('isElementDisabled', () => {
     it('should return false for enabled buttons', () => {
       const button = document.createElement('button');
