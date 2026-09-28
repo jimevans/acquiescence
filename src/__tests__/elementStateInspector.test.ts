@@ -71,6 +71,15 @@ describe('ElementStateInspector', () => {
     });
   });
 
+  describe('findOpenShadowRoots', () => {
+    it('should find the open shadow roots within the scopes', () => {
+      const element = document.createElement('div');
+      container.appendChild(element);
+      const root = element.attachShadow({ mode: 'open' });
+      expect(inspector.findOpenShadowRoots([container])).toEqual([root]);
+    });
+  });
+
   describe('elementsMatchAriaStates', () => {
     it('should report, for each element, whether it has every given state', () => {
       container.innerHTML = '<input type="checkbox" checked><input type="checkbox"><button aria-pressed="true" aria-expanded="true">b</button>';

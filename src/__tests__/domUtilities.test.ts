@@ -16,6 +16,44 @@ describe('DOMUtilities', () => {
     container.remove();
   });
 
+  describe('getOpenShadowRoots', () => {
+    const host = (parent: Element | ShadowRoot, id: string, mode: ShadowRootMode): ShadowRoot => {
+      const element = document.createElement('div');
+      element.id = id;
+      parent.appendChild(element);
+      return element.attachShadow({ mode });
+    };
+
+    it('should find open shadow roots within a document, including nested ones, but not closed ones', () => {
+      const outer = host(container, 'outer', 'open');
+      const inner = host(outer, 'inner', 'open');
+      const closed = host(container, 'closed', 'closed');
+      host(closed, 'hidden', 'open');
+      expect(domUtils.getOpenShadowRoots([document])).toEqual([outer, inner]);
+    });
+
+    it('should include a scope element\'s own shadow root', () => {
+      const root = host(container, 'widget', 'open');
+      expect(domUtils.getOpenShadowRoots([container.querySelector('#widget')!])).toEqual([root]);
+    });
+
+    it('should search within a shadow root given as a scope, even a closed one', () => {
+      const closed = host(container, 'closed', 'closed');
+      const nested = host(closed, 'nested', 'open');
+      expect(domUtils.getOpenShadowRoots([closed])).toEqual([nested]);
+    });
+
+    it('should find each shadow root once across overlapping scopes', () => {
+      const root = host(container, 'widget', 'open');
+      expect(domUtils.getOpenShadowRoots([container, container.querySelector('#widget')!])).toEqual([root]);
+    });
+
+    it('should find nothing where there are no shadow roots', () => {
+      container.innerHTML = '<p>plain</p>';
+      expect(domUtils.getOpenShadowRoots([container])).toEqual([]);
+    });
+  });
+
   describe('getNodeText', () => {
     it('should return the text of a text node', () => {
       expect(domUtils.getNodeText(document.createTextNode('plain'))).toBe('plain');

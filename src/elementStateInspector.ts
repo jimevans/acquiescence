@@ -293,6 +293,15 @@ class ElementStateInspector {
   }
 
   /**
+   * Finds the open shadow roots within some scopes, including nested ones, so that a search can include them.
+   * @param scopes The documents, elements, or shadow roots to search.
+   * @returns {ShadowRoot[]} The open shadow roots, each once, in the order found.
+   */
+  findOpenShadowRoots(scopes: Array<Document | Element | ShadowRoot>): ShadowRoot[] {
+    return this.domUtilities.getOpenShadowRoots(scopes);
+  }
+
+  /**
    * Checks, for each of several elements, whether it has every given ARIA state. A state that does not apply to
    * an element, such as checked for a link, does not match.
    * @param elements The elements to check.
