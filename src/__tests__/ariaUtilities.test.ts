@@ -102,6 +102,77 @@ describe('AriaUtilities', () => {
     container.remove();
   });
 
+  describe('ARIA states', () => {
+    const element = (html: string): Element => {
+      container.innerHTML = html;
+      return container.firstElementChild!;
+    };
+
+    it('should read the checked state of native checkboxes and radio buttons', () => {
+      const checkbox = element('<input type="checkbox" checked>') as HTMLInputElement;
+      expect(ariaUtils.getAriaChecked(checkbox)).toBe(true);
+      checkbox.indeterminate = true;
+      expect(ariaUtils.getAriaChecked(checkbox)).toBe('mixed');
+      const radio = element('<input type="radio">') as HTMLInputElement;
+      radio.indeterminate = true;
+      expect(ariaUtils.getAriaChecked(radio)).toBe(false);
+    });
+
+    it('should read aria-checked for roles that support it', () => {
+      expect(ariaUtils.getAriaChecked(element('<div role="checkbox" aria-checked="true"></div>'))).toBe(true);
+      expect(ariaUtils.getAriaChecked(element('<div role="switch" aria-checked="mixed"></div>'))).toBe('mixed');
+      expect(ariaUtils.getAriaChecked(element('<div role="menuitemradio"></div>'))).toBe(false);
+    });
+
+    it('should not report checked for elements that cannot be checked', () => {
+      expect(ariaUtils.getAriaChecked(element('<input type="text">'))).toBeUndefined();
+      expect(ariaUtils.getAriaChecked(element('<a href="#" aria-checked="true">link</a>'))).toBeUndefined();
+      expect(ariaUtils.getAriaChecked(element('<span aria-checked="true">s</span>'))).toBeUndefined();
+    });
+
+    it('should read aria-pressed for buttons only', () => {
+      expect(ariaUtils.getAriaPressed(element('<button aria-pressed="true">b</button>'))).toBe(true);
+      expect(ariaUtils.getAriaPressed(element('<button aria-pressed="mixed">b</button>'))).toBe('mixed');
+      expect(ariaUtils.getAriaPressed(element('<button>b</button>'))).toBe(false);
+      expect(ariaUtils.getAriaPressed(element('<div aria-pressed="true">d</div>'))).toBeUndefined();
+    });
+
+    it('should read the expanded state of details and of roles that support aria-expanded', () => {
+      expect(ariaUtils.getAriaExpanded(element('<details open><summary>s</summary></details>'))).toBe(true);
+      expect(ariaUtils.getAriaExpanded(element('<details><summary>s</summary></details>'))).toBe(false);
+      expect(ariaUtils.getAriaExpanded(element('<button aria-expanded="true">b</button>'))).toBe(true);
+      expect(ariaUtils.getAriaExpanded(element('<button aria-expanded="false">b</button>'))).toBe(false);
+      expect(ariaUtils.getAriaExpanded(element('<button>b</button>'))).toBeUndefined();
+      expect(ariaUtils.getAriaExpanded(element('<p aria-expanded="true">p</p>'))).toBeUndefined();
+      expect(ariaUtils.getAriaExpanded(element('<span aria-expanded="true">s</span>'))).toBeUndefined();
+    });
+
+    it('should read the selected state of options and of roles that support aria-selected', () => {
+      const select = element('<select><option>a</option><option selected>b</option></select>') as HTMLSelectElement;
+      expect(ariaUtils.getAriaSelected(select.options[0])).toBe(false);
+      expect(ariaUtils.getAriaSelected(select.options[1])).toBe(true);
+      expect(ariaUtils.getAriaSelected(element('<div role="tab" aria-selected="true">t</div>'))).toBe(true);
+      expect(ariaUtils.getAriaSelected(element('<div role="tab">t</div>'))).toBe(false);
+      expect(ariaUtils.getAriaSelected(element('<div aria-selected="true">d</div>'))).toBeUndefined();
+    });
+
+    it('should read the level of headings and of roles that support aria-level', () => {
+      expect(ariaUtils.getAriaLevel(element('<h3>h</h3>'))).toBe(3);
+      expect(ariaUtils.getAriaLevel(element('<div role="heading" aria-level="5">h</div>'))).toBe(5);
+      expect(ariaUtils.getAriaLevel(element('<div role="treeitem" aria-level="0">t</div>'))).toBeUndefined();
+      expect(ariaUtils.getAriaLevel(element('<div role="treeitem" aria-level="two">t</div>'))).toBeUndefined();
+      expect(ariaUtils.getAriaLevel(element('<p aria-level="2">p</p>'))).toBeUndefined();
+      expect(ariaUtils.getAriaLevel(element('<span aria-level="2">s</span>'))).toBeUndefined();
+    });
+
+    it('should find the elements aria-labelledby refers to', () => {
+      container.innerHTML = '<span id="first">First</span><span id="second">Second</span><input aria-labelledby="second first missing"><input>';
+      const inputs = container.querySelectorAll('input');
+      expect(ariaUtils.getAriaLabelledByElements(inputs[0])!.map((label) => label.id)).toEqual(['second', 'first']);
+      expect(ariaUtils.getAriaLabelledByElements(inputs[1])).toBeNull();
+    });
+  });
+
   describe('hasExplicitAriaDisabled', () => {
     describe('Basic Functionality', () => {
       it('should return false for undefined element', () => {

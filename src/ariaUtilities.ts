@@ -201,6 +201,15 @@ class AriaUtilities {
     ['aria-roledescription', ['generic']],
   ];
 
+  private readonly ariaCheckedRoles = ['checkbox', 'menuitemcheckbox', 'option', 'radio', 'switch', 'menuitemradio', 'treeitem'];
+  private readonly ariaPressedRoles = ['button'];
+  private readonly ariaExpandedRoles = [
+    'application', 'button', 'checkbox', 'combobox', 'gridcell', 'link', 'listbox', 'menuitem', 'row',
+    'rowheader', 'tab', 'treeitem', 'columnheader', 'menuitemcheckbox', 'menuitemradio', 'switch'
+  ];
+  private readonly ariaSelectedRoles = ['gridcell', 'option', 'row', 'tab', 'rowheader', 'columnheader', 'treeitem'];
+  private readonly ariaLevelRoles = ['heading', 'listitem', 'row', 'treeitem'];
+
   private readonly ariaReadonlyRoles = [
     'checkbox', 'combobox', 'grid', 'gridcell', 'listbox', 'radiogroup',
     'slider', 'spinbutton', 'textbox', 'columnheader', 'rowheader',
@@ -237,6 +246,102 @@ class AriaUtilities {
    */
   isAriaReadOnlyRole(element: Element): boolean {
     return this.ariaReadonlyRoles.includes(this.getAriaRole(element) ?? '')
+  }
+
+  /**
+   * Gets the checked state of an element: from a native checkbox or radio button, including an indeterminate
+   * checkbox, or from aria-checked for a role that supports it.
+   * @param element {Element} The element to check.
+   * @returns {boolean | 'mixed' | undefined} The checked state, or undefined if the element cannot be checked.
+   */
+  getAriaChecked(element: Element): boolean | 'mixed' | undefined {
+    if (element instanceof HTMLInputElement && ['checkbox', 'radio'].includes(element.type)) {
+      return element.indeterminate && element.type === 'checkbox' ? 'mixed' : element.checked;
+    }
+    if (this.ariaCheckedRoles.includes(this.getAriaRole(element) ?? '')) {
+      return this.readTriState(element.getAttribute('aria-checked'));
+    }
+    return undefined;
+  }
+
+  /**
+   * Gets the pressed state of a toggle button, from aria-pressed.
+   * @param element {Element} The element to check.
+   * @returns {boolean | 'mixed' | undefined} The pressed state, or undefined if the element is not a button.
+   */
+  getAriaPressed(element: Element): boolean | 'mixed' | undefined {
+    if (this.ariaPressedRoles.includes(this.getAriaRole(element) ?? '')) {
+      return this.readTriState(element.getAttribute('aria-pressed'));
+    }
+    return undefined;
+  }
+
+  /**
+   * Gets the expanded state of an element: whether a details element is open, or aria-expanded for a role that
+   * supports it.
+   * @param element {Element} The element to check.
+   * @returns {boolean | undefined} The expanded state, or undefined if the element does not expand or does not say.
+   */
+  getAriaExpanded(element: Element): boolean | undefined {
+    if (element instanceof HTMLDetailsElement) {
+      return element.open;
+    }
+    if (this.ariaExpandedRoles.includes(this.getAriaRole(element) ?? '')) {
+      const expanded = element.getAttribute('aria-expanded');
+      return expanded === 'true' ? true : expanded === 'false' ? false : undefined;
+    }
+    return undefined;
+  }
+
+  /**
+   * Gets the selected state of an element: from a native option, or from aria-selected for a role that supports it.
+   * @param element {Element} The element to check.
+   * @returns {boolean | undefined} The selected state, or undefined if the element cannot be selected.
+   */
+  getAriaSelected(element: Element): boolean | undefined {
+    if (element instanceof HTMLOptionElement) {
+      return element.selected;
+    }
+    if (this.ariaSelectedRoles.includes(this.getAriaRole(element) ?? '')) {
+      return element.getAttribute('aria-selected') === 'true';
+    }
+    return undefined;
+  }
+
+  /**
+   * Gets the level of an element: from a native h1 to h6 heading, or from aria-level for a role that supports it.
+   * @param element {Element} The element to check.
+   * @returns {number | undefined} The level, or undefined if the element has none.
+   */
+  getAriaLevel(element: Element): number | undefined {
+    const headingLevel = /^H([1-6])$/.exec(this.domUtilities.getNormalizedElementTagName(element));
+    if (headingLevel) {
+      return Number(headingLevel[1]);
+    }
+    if (this.ariaLevelRoles.includes(this.getAriaRole(element) ?? '')) {
+      const level = Number(element.getAttribute('aria-level'));
+      return Number.isInteger(level) && level >= 1 ? level : undefined;
+    }
+    return undefined;
+  }
+
+  /**
+   * Gets the elements an element's aria-labelledby attribute refers to.
+   * @param element {Element} The element to check.
+   * @returns {Element[] | null} The elements, or null if the element has no aria-labelledby attribute.
+   */
+  getAriaLabelledByElements(element: Element): Element[] | null {
+    const ref = element.getAttribute('aria-labelledby');
+    return ref === null ? null : this.getIdRefs(element, ref);
+  }
+
+  /**
+   * Reads a true/false/mixed ARIA attribute value; anything but "true" or "mixed" is false.
+   * @param value {string | null} The attribute value.
+   * @returns {boolean | 'mixed'} The state.
+   */
+  private readTriState(value: string | null): boolean | 'mixed' {
+    return value === 'mixed' ? 'mixed' : value === 'true';
   }
 
   /**

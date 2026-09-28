@@ -7,6 +7,15 @@ export type ElementState = 'visible' | 'hidden' | 'enabled' | 'disabled' | 'edit
 export type ElementStateWithoutStable = Exclude<ElementState, 'stable'>;
 export type ElementStateQueryResult = { matches: boolean, received?: string, isRadio?: boolean };
 
+export type AriaStates = {
+  checked?: boolean | 'mixed',
+  pressed?: boolean | 'mixed',
+  expanded?: boolean,
+  selected?: boolean,
+  level?: number,
+  disabled?: boolean,
+};
+
 export type ElementInteractionType = 'click' | 'doubleclick' | 'hover' | 'drag' | 'drop' | 'type' | 'clear' | 'screenshot';
 export type ElementInteractionReadyResult = 'ready' | 'notready' | 'needsscroll';
 
@@ -278,9 +287,53 @@ class ElementStateInspector {
    * @returns {boolean[]} For each element, in order, whether its text contains the string.
    */
   elementsContainText(elements: Element[], text: string): boolean[] {
-    const normalize = (value: string) => value.replace(/\s+/g, ' ').trim().toLowerCase();
+    const normalize = (value: string) => this.normalizeWhiteSpace(value).toLowerCase();
     const expected = normalize(text);
     return elements.map((element) => normalize(this.domUtilities.getNodeText(element)).includes(expected));
+  }
+
+  /**
+   * Checks, for each of several elements, whether it has every given ARIA state. A state that does not apply to
+   * an element, such as checked for a link, does not match.
+   * @param elements The elements to check.
+   * @param states The states each element must have; an omitted state is not checked.
+   * @returns {boolean[]} For each element, in order, whether it has every given state.
+   */
+  elementsMatchAriaStates(elements: Element[], states: AriaStates): boolean[] {
+    return elements.map((element) =>
+      (states.checked === undefined || this.ariaUtilities.getAriaChecked(element) === states.checked) &&
+      (states.pressed === undefined || this.ariaUtilities.getAriaPressed(element) === states.pressed) &&
+      (states.expanded === undefined || this.ariaUtilities.getAriaExpanded(element) === states.expanded) &&
+      (states.selected === undefined || this.ariaUtilities.getAriaSelected(element) === states.selected) &&
+      (states.level === undefined || this.ariaUtilities.getAriaLevel(element) === states.level) &&
+      (states.disabled === undefined || this.isElementDisabled(element) === states.disabled));
+  }
+
+  /**
+   * Finds the elements within some scopes whose labels match a text. An element's labels are the elements its
+   * aria-labelledby attribute refers to; failing that, its aria-label attribute; failing that, the label elements
+   * of a form control. Labels are compared as elementsContainText compares text; with exact, the whole label must
+   * match, with case.
+   * @param scopes The documents or elements to search within, not including the elements themselves.
+   * @param text The text to match.
+   * @param exact Whether the whole label must match, with case.
+   * @returns {Element[]} The matching elements, in the order found, each once.
+   */
+  findElementsByLabel(scopes: Array<Document | Element>, text: string, exact: boolean): Element[] {
+    const expected = exact ? this.normalizeWhiteSpace(text) : this.normalizeWhiteSpace(text).toLowerCase();
+    const matches = new Set<Element>();
+    for (const scope of scopes) {
+      for (const element of Array.from(scope.querySelectorAll('*'))) {
+        const labelMatches = this.getElementLabels(element).some((label) => {
+          const normalized = this.normalizeWhiteSpace(label);
+          return exact ? normalized === expected : normalized.toLowerCase().includes(expected);
+        });
+        if (labelMatches) {
+          matches.add(element);
+        }
+      }
+    }
+    return Array.from(matches);
   }
 
   /**
@@ -464,6 +517,33 @@ class ElementStateInspector {
    * @param style {CSSStyleDeclaration} The computed style of the element.
    * @returns {boolean} True if the element is hidden by overflow; otherwise, false.
    */
+  /**
+   * Gets the texts of an element's labels.
+   * @param element The element.
+   * @returns {string[]} The texts, or an empty list if the element is not labelled.
+   */
+  private getElementLabels(element: Element): string[] {
+    const labelledBy = this.ariaUtilities.getAriaLabelledByElements(element);
+    if (labelledBy) {
+      return labelledBy.map((label) => this.domUtilities.getNodeText(label));
+    }
+    const ariaLabel = element.getAttribute('aria-label');
+    if (ariaLabel !== null && ariaLabel.trim() !== '') {
+      return [ariaLabel];
+    }
+    const labels = (element as HTMLInputElement).labels;
+    return labels ? Array.from(labels, (label) => this.domUtilities.getNodeText(label)) : [];
+  }
+
+  /**
+   * Collapses each run of whitespace to one space and removes whitespace at either end.
+   * @param value The text.
+   * @returns {string} The normalized text.
+   */
+  private normalizeWhiteSpace(value: string): string {
+    return value.replace(/\s+/g, ' ').trim();
+  }
+
   private isHiddenByOverflow(element: Element, style: CSSStyleDeclaration): boolean {
     // If the element is not hidden by overflow, return false.
     if (!this.checkIsHiddenByOverflow(element, style)) {
