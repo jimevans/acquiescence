@@ -144,6 +144,32 @@ class DOMUtilities {
   }
 
   /**
+   * Gets the open shadow roots within some scopes: that of a scope element itself, those of the elements within
+   * each scope, and those nested within them. Closed shadow roots cannot be reached from script, so they are not
+   * included, and neither is anything within them.
+   * @param scopes {Array<Document | Element | ShadowRoot>} The scopes to search.
+   * @returns {ShadowRoot[]} The shadow roots, each once, in the order found.
+   */
+  getOpenShadowRoots(scopes: Array<Document | Element | ShadowRoot>): ShadowRoot[] {
+    const roots = new Set<ShadowRoot>();
+    const visit = (scope: Document | Element | ShadowRoot) => {
+      const elements = Array.from(scope.querySelectorAll('*'));
+      if (scope instanceof Element) {
+        elements.unshift(scope);
+      }
+      for (const element of elements) {
+        const shadowRoot = element.shadowRoot;
+        if (shadowRoot && !roots.has(shadowRoot)) {
+          roots.add(shadowRoot);
+          visit(shadowRoot);
+        }
+      }
+    };
+    scopes.forEach(visit);
+    return Array.from(roots);
+  }
+
+  /**
    * Gets the text of a node as it is rendered: text within an open shadow root rather than the shadow host's
    * own children, the nodes assigned to a slot (or its fallback content when none are), and no text from
    * script, style, or noscript elements. A closed shadow root cannot be read, so its host's children are used.
