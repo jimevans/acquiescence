@@ -197,6 +197,65 @@ describe('ElementStateInspector', () => {
     });
   });
 
+  describe('selectText', () => {
+    it('should select the value of an input and focus it', () => {
+      const input = document.createElement('input');
+      input.value = 'old value';
+      container.appendChild(input);
+
+      expect(inspector.selectText(input)).toBe(true);
+      expect(document.activeElement).toBe(input);
+      expect(input.selectionStart).toBe(0);
+      expect(input.selectionEnd).toBe('old value'.length);
+    });
+
+    it('should select the value of a textarea and focus it', () => {
+      const textarea = document.createElement('textarea');
+      textarea.value = 'first line\nsecond line';
+      container.appendChild(textarea);
+
+      expect(inspector.selectText(textarea)).toBe(true);
+      expect(document.activeElement).toBe(textarea);
+      expect(textarea.selectionStart).toBe(0);
+      expect(textarea.selectionEnd).toBe(textarea.value.length);
+    });
+
+    // jsdom collapses the selection when the element takes focus; browsers keep it.
+    testIf(isNativeDom(), 'should select the contents of any other element and focus it', () => {
+      const div = document.createElement('div');
+      div.contentEditable = 'true';
+      div.tabIndex = 0;
+      div.innerHTML = 'some <b>rich</b> text';
+      container.appendChild(div);
+
+      expect(inspector.selectText(div)).toBe(true);
+      expect(document.activeElement).toBe(div);
+      const range = document.getSelection()?.getRangeAt(0);
+      expect(range?.startContainer).toBe(div);
+      expect(range?.startOffset).toBe(0);
+      expect(range?.endContainer).toBe(div);
+      expect(range?.endOffset).toBe(div.childNodes.length);
+    });
+
+    it('should select nothing in an element that is not connected', () => {
+      const input = document.createElement('input');
+      input.value = 'detached';
+
+      expect(inspector.selectText(input)).toBe(false);
+      expect(document.activeElement).not.toBe(input);
+    });
+
+    it('should focus an element of a document that has no selection', () => {
+      const otherDocument = document.implementation.createHTMLDocument('no browsing context');
+      const div = otherDocument.createElement('div');
+      otherDocument.body.appendChild(div);
+      const getSelection = vi.spyOn(otherDocument, 'getSelection').mockReturnValue(null);
+
+      expect(inspector.selectText(div)).toBe(true);
+      expect(getSelection).toHaveBeenCalled();
+    });
+  });
+
   describe('isElementReadOnly', () => {
     it('should return false for editable input', () => {
       const input = document.createElement('input');
@@ -512,27 +571,10 @@ describe('ElementStateInspector', () => {
       div.contentEditable = 'true';
       container.appendChild(div);
 
-      // jsdom doesn't properly set isContentEditable, so this throws an error
-      // In a real browser, this would detect it as editable
-      let threwError = false;
-      let errorMessage = '';
-      let resultMatches = false;
-      let resultReceived: string | undefined = undefined;
-      
-      try {
-        const result = await inspector.queryElementState(div, 'editable');
-        resultMatches = result.matches;
-        resultReceived = result.received;
-      } catch (e) {
-        threwError = true;
-        errorMessage = (e as Error).message;
-      }
-
-      // Either it succeeded (native DOM) or threw an expected error (jsdom)
-      // We verify that one of these two cases occurred
-      const successfullyDetected = !threwError && resultMatches && resultReceived === 'editable';
-      const threwExpectedError = threwError && errorMessage.includes('Element is not an');
-      expect(successfullyDetected || threwExpectedError).toBe(true);
+      // jsdom doesn't set isContentEditable, so it reports the element as one that cannot be edited
+      const result = await inspector.queryElementState(div, 'editable');
+      expect(result.matches).toBe(isNativeDom());
+      expect(result.received).toBe(isNativeDom() ? 'editable' : 'error:noteditable');
     });
 
     it('should detect elements with aria-readonly on supported roles', async () => {
@@ -546,11 +588,12 @@ describe('ElementStateInspector', () => {
       expect(result.received).toBe('readOnly');
     });
 
-    it('should throw error for non-editable elements', async () => {
+    it('should report elements that cannot be edited', async () => {
       const button = document.createElement('button');
       container.appendChild(button);
 
-      await expect(inspector.queryElementState(button, 'editable')).rejects.toThrow('Element is not an <input>, <textarea>, <select> or [contenteditable]');
+      const result = await inspector.queryElementState(button, 'editable');
+      expect(result).toEqual({ matches: false, received: 'error:noteditable' });
     });
   });
 
@@ -634,6 +677,14 @@ describe('ElementStateInspector', () => {
       const result = await inspector.queryElementStates(button, ['enabled']);
       expect(result.status).toBe('error');
       expect(result).toHaveProperty('message', 'notconnected');
+    });
+
+    it('should return error for elements that cannot be edited', async () => {
+      const button = document.createElement('button');
+      container.appendChild(button);
+
+      const result = await inspector.queryElementStates(button, ['enabled', 'editable']);
+      expect(result).toEqual({ status: 'error', message: 'noteditable' });
     });
 
     it('should check enabled state', async () => {
@@ -3452,6 +3503,16 @@ describe('ElementStateInspector', () => {
 
   describe('Additional Coverage Tests', () => {
     describe('isInteractionReady - error cases', () => {
+      testIf(isNativeDom(), 'should report an element that cannot be edited as not ready to type into', async () => {
+        const button = document.createElement('button');
+        button.textContent = 'Not a text field';
+        container.appendChild(button);
+        await new Promise(resolve => requestAnimationFrame(resolve));
+
+        expect(await inspector.isInteractionReady(button, 'type')).toEqual({ status: 'notready', reason: 'noteditable' });
+        expect(await inspector.isInteractionReady(button, 'clear')).toEqual({ status: 'notready', reason: 'noteditable' });
+      });
+
       testIf(isNativeDom(), 'should report an unviewable element as not ready', async () => {
         // Test 'unviewable' element error
         // Create element that is NOT in viewport AND cannot be scrolled into view

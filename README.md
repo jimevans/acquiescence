@@ -122,7 +122,8 @@ if (result.status === 'ready') {
 } else if (result.status === 'needsscroll') {
   console.log('Element needs to be scrolled into view');
 } else {
-  console.log('Element is not ready for interaction');
+  // For example 'hidden', 'disabled', 'noteditable', or 'obscured by <div class="overlay">'
+  console.log('Element is not ready for interaction:', result.reason);
 }
 ```
 
@@ -214,6 +215,7 @@ The main class for querying element states and waiting for interactions.
 - `isElementVisible(element)` - Helper to check visibility
 - `isElementDisabled(element)` - Helper to check disabled state
 - `isElementReadOnly(element)` - Helper to check read-only state
+- `selectText(element)` - Focus an element and select its text, so that typing replaces it
 
 For complete API documentation, see the [full API reference](https://yourusername.github.io/element-state/api/).
 
