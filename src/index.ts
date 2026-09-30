@@ -8,6 +8,7 @@ export type {
   ElementStateQueryResult,
   ElementInteractionType,
   ElementInteractionReadyResult,
+  ElementInteractionReadiness,
   AriaStates,
   Box
 } from './elementStateInspector.js';

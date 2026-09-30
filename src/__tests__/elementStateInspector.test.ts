@@ -1015,6 +1015,7 @@ describe('ElementStateInspector', () => {
 
       const result = await inspector.isInteractionReady(button, 'click');
       expect(result.status).toBe('notready');
+      expect(result.reason).toBe('hidden');
     });
 
     testIf(isNativeDom(), 'should return needsscroll for elements not in viewport', async () => {
@@ -1113,6 +1114,7 @@ describe('ElementStateInspector', () => {
 
       const result = await inspector.isInteractionReady(input, 'type');
       expect(result.status).toBe('notready');
+      expect(result.reason).toBe('disabled');
     });
 
     testIf(isNativeDom(), 'should check enabled and editable states for clear', async () => {
@@ -1189,10 +1191,48 @@ describe('ElementStateInspector', () => {
       }
     });
 
-    testIf(isNativeDom(), 'should throw for disconnected elements', async () => {
+    testIf(isNativeDom(), 'should report disconnected elements as not ready', async () => {
       const button = document.createElement('button');
 
-      await expect(inspector.isInteractionReady(button, 'click')).rejects.toThrow('element not connected');
+      const result = await inspector.isInteractionReady(button, 'click');
+      expect(result).toEqual({ status: 'notready', reason: 'notconnected' });
+    });
+
+    testIf(isNativeDom(), 'should report the interaction point as an offset from the in-view center point', async () => {
+      const button = document.createElement('button');
+      button.style.width = '101px';
+      button.style.height = '51px';
+      button.style.position = 'fixed';
+      button.style.top = '100px';
+      button.style.left = '100px';
+      container.appendChild(button);
+
+      const centered = await inspector.isInteractionReady(button, 'click');
+      const offset = await inspector.isInteractionReady(button, 'click', { x: 20, y: -10 });
+
+      // The in-view center point is (150, 125), rounded down from (150.5, 125.5).
+      expect(centered.status).toBe('ready');
+      expect(centered.interactionOffset!.x).toBeCloseTo(0.5, 5);
+      expect(centered.interactionOffset!.y).toBeCloseTo(0.5, 5);
+      expect(offset.interactionOffset!.x).toBeCloseTo(20.5, 5);
+      expect(offset.interactionOffset!.y).toBeCloseTo(-9.5, 5);
+    });
+
+    testIf(isNativeDom(), 'should clip the in-view center point to the viewport', async () => {
+      const button = document.createElement('button');
+      button.style.width = '100px';
+      button.style.height = '100px';
+      button.style.position = 'fixed';
+      button.style.top = '-40px';
+      button.style.left = '-40px';
+      container.appendChild(button);
+
+      const result = await inspector.isInteractionReady(button, 'click', { x: 10, y: 10 });
+
+      // The visible part runs from 0 to 60, so the in-view center point is (30, 30), not the box center (10, 10).
+      expect(result.status).toBe('ready');
+      expect(result.interactionPoint!.x - result.interactionOffset!.x).toBe(30);
+      expect(result.interactionPoint!.y - result.interactionOffset!.y).toBe(30);
     });
   });
 
@@ -3412,7 +3452,7 @@ describe('ElementStateInspector', () => {
 
   describe('Additional Coverage Tests', () => {
     describe('isInteractionReady - error cases', () => {
-      testIf(isNativeDom(), 'should throw error for unviewable element', async () => {
+      testIf(isNativeDom(), 'should report an unviewable element as not ready', async () => {
         // Test 'unviewable' element error
         // Create element that is NOT in viewport AND cannot be scrolled into view
         const outerContainer = document.createElement('div');
@@ -3442,9 +3482,7 @@ describe('ElementStateInspector', () => {
         try {
           const stateResult = await inspector.queryElementState(button, 'inview');
           if (stateResult.received === 'unviewable') {
-            await expect(inspector.isInteractionReady(button, 'click')).rejects.toThrow(
-              'element is not in view port, and cannot be scrolled into view due to overflow'
-            );
+            expect(await inspector.isInteractionReady(button, 'click')).toEqual({ status: 'notready', reason: 'unviewable' });
           } else {
             // In jsdom, this might not work as expected, so just verify the logic
             expect(['inview', 'notinview', 'unviewable']).toContain(stateResult.received);
@@ -3455,7 +3493,7 @@ describe('ElementStateInspector', () => {
         }
       });
 
-      testIf(isNativeDom(), 'should throw error when element is obscured', async () => {
+      testIf(isNativeDom(), 'should report an obscured element as not ready, naming what obscures it', async () => {
         // Test error when clickPoint.status === 'error'
         // Create a button that passes all state checks but is obscured by another element
         const button = document.createElement('button');
@@ -3485,7 +3523,9 @@ describe('ElementStateInspector', () => {
         
         // Button is visible, in viewport, enabled, and stable
         // But the click point is obscured by the overlay
-        await expect(inspector.isInteractionReady(button, 'click')).rejects.toThrow();
+        const result = await inspector.isInteractionReady(button, 'click');
+        expect(result.status).toBe('notready');
+        expect(result.reason).toMatch(/^obscured by <div/);
       });
     });
 

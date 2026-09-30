@@ -18,6 +18,12 @@ export type AriaStates = {
 
 export type ElementInteractionType = 'click' | 'doubleclick' | 'hover' | 'drag' | 'drop' | 'type' | 'clear' | 'screenshot';
 export type ElementInteractionReadyResult = 'ready' | 'notready' | 'needsscroll';
+export type ElementInteractionReadiness = {
+  status: ElementInteractionReadyResult,
+  interactionPoint?: { x: number, y: number },
+  interactionOffset?: { x: number, y: number },
+  reason?: string,
+};
 
 export type Box = {
   visible: boolean;
@@ -151,7 +157,7 @@ class ElementStateInspector {
    * - not in the view port, and cannot be scrolled into view due to overflow
    * - is obscured by another element
    */
-  async isInteractionReady(element: Element, interactionType: ElementInteractionType, hitPointOffset?: { x: number, y: number }): Promise<{ status: ElementInteractionReadyResult, interactionPoint?: { x: number, y: number } }> {
+  async isInteractionReady(element: Element, interactionType: ElementInteractionType, hitPointOffset?: { x: number, y: number }): Promise<ElementInteractionReadiness> {
     const states: ElementState[] = ['stable', 'visible', 'inview'];
     if (interactionType === 'click' || interactionType === 'doubleclick' || interactionType === 'hover' || interactionType === 'drag') {
       states.push('enabled');
@@ -161,23 +167,30 @@ class ElementStateInspector {
     }
     const result = await this.queryElementStates(element, states);
     if (result.status === 'error') {
-      throw new Error('element not connected');
+      return { status: 'notready', reason: result.message };
     }
     if (result.status === 'failure') {
-      if (result.missingState === 'unviewable') {
-        throw new Error('element is not in view port, and cannot be scrolled into view due to overflow');
-      }
       if (result.missingState === 'notinview') {
         return { status: 'needsscroll' };
       }
-      return { status: 'notready' };
+      return { status: 'notready', reason: result.missingState };
     }
 
     const clickPoint = await this.getElementClickPoint(element, hitPointOffset);
     if (clickPoint.status === 'error') {
-      throw new Error(clickPoint.message);
+      return { status: 'notready', reason: clickPoint.message };
     }
-    return { status: 'ready', interactionPoint: clickPoint.hitPoint };
+    // Reported as an offset from the element's in-view center point too, which is where a WebDriver
+    // element origin places the pointer, so that the interaction can be aimed from the element.
+    // A successful click point always has a hit point.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const hitPoint = clickPoint.hitPoint!;
+    const center = this.getInViewCenterPoint(element);
+    return {
+      status: 'ready',
+      interactionPoint: hitPoint,
+      interactionOffset: { x: hitPoint.x - center.x, y: hitPoint.y - center.y },
+    };
   }
 
   /**
@@ -436,7 +449,7 @@ class ElementStateInspector {
       return { status: 'success', hitPoint };
     }
 
-    return { status: 'error', message: this.createElementObscuredErrorMessage(targetElement, hitParents) };
+    return { status: 'error', message: `obscured by ${this.createElementObscuredErrorMessage(targetElement, hitParents)}` };
   }
 
   /**
@@ -730,6 +743,21 @@ class ElementStateInspector {
    * @param hitParents {Element[]} The elements that are in the chain of the target element.
    * @returns {string} The error message.
    */
+  /**
+   * Gets an element's in-view center point, as WebDriver defines it: the center of the element's first client
+   * rectangle, clipped to the viewport, with each coordinate rounded down.
+   * @param element The element.
+   * @returns The point, in viewport coordinates.
+   */
+  private getInViewCenterPoint(element: Element): { x: number, y: number } {
+    const rect = element.getClientRects()[0];
+    const left = Math.max(0, Math.min(rect.left, rect.right));
+    const right = Math.min(window.innerWidth, Math.max(rect.left, rect.right));
+    const top = Math.max(0, Math.min(rect.top, rect.bottom));
+    const bottom = Math.min(window.innerHeight, Math.max(rect.top, rect.bottom));
+    return { x: Math.floor((left + right) / 2), y: Math.floor((top + bottom) / 2) };
+  }
+
   private createElementObscuredErrorMessage(targetElement: Element, hitParents: Element[]): string {
     const hitTargetDescription = this.nodePreviewer.previewNode(hitParents[0] || document.documentElement);
     // Root is the topmost element in the hitTarget's chain that is not in the
