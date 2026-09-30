@@ -106,6 +106,9 @@ if (result.status === 'success') {
 | `enabled` | Element is not disabled |
 | `disabled` | Element is disabled (via disabled attribute or aria-disabled) |
 | `editable` | Element can accept text input (not disabled or readonly) |
+| `checked` | Checkbox, radio button, or element with a role allowing aria-checked is checked |
+| `unchecked` | Such an element is not checked |
+| `indeterminate` | Such an element is in a mixed state |
 | `inview` | Element is currently visible in the viewport |
 | `notinview` | Element is not in viewport but could be scrolled into view |
 | `unviewable` | Element cannot be scrolled into view (hidden by overflow) |
@@ -215,7 +218,6 @@ The main class for querying element states and waiting for interactions.
 - `isElementVisible(element)` - Helper to check visibility
 - `isElementDisabled(element)` - Helper to check disabled state
 - `isElementReadOnly(element)` - Helper to check read-only state
-- `selectText(element)` - Focus an element and select its text, so that typing replaces it
 
 For complete API documentation, see the [full API reference](https://yourusername.github.io/element-state/api/).
 

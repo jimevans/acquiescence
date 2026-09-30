@@ -265,6 +265,16 @@ class AriaUtilities {
   }
 
   /**
+   * Gets a value indicating whether an element is a radio button, native or by role, which clicking checks but
+   * cannot uncheck.
+   * @param element {Element} The element to check.
+   * @returns {boolean} True if the element is a radio button; otherwise, false.
+   */
+  isAriaRadio(element: Element): boolean {
+    return ['radio', 'menuitemradio'].includes(this.getAriaRole(element) ?? '');
+  }
+
+  /**
    * Gets the pressed state of a toggle button, from aria-pressed.
    * @param element {Element} The element to check.
    * @returns {boolean | 'mixed' | undefined} The pressed state, or undefined if the element is not a button.

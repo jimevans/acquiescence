@@ -130,6 +130,13 @@ describe('AriaUtilities', () => {
       expect(ariaUtils.getAriaChecked(element('<span aria-checked="true">s</span>'))).toBeUndefined();
     });
 
+    it('should tell radio buttons, native or by role, from other checkable elements', () => {
+      expect(ariaUtils.isAriaRadio(element('<input type="radio">'))).toBe(true);
+      expect(ariaUtils.isAriaRadio(element('<div role="menuitemradio"></div>'))).toBe(true);
+      expect(ariaUtils.isAriaRadio(element('<input type="checkbox">'))).toBe(false);
+      expect(ariaUtils.isAriaRadio(element('<span>s</span>'))).toBe(false);
+    });
+
     it('should read aria-pressed for buttons only', () => {
       expect(ariaUtils.getAriaPressed(element('<button aria-pressed="true">b</button>'))).toBe(true);
       expect(ariaUtils.getAriaPressed(element('<button aria-pressed="mixed">b</button>'))).toBe('mixed');

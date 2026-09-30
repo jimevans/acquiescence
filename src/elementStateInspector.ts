@@ -56,8 +56,9 @@ class ElementStateInspector {
    * - 'failure' if at least one state is missing.
    * - 'error' if the node is not connected, or cannot have a queried state.
    * - 'missingState' is the state that is missing.
-   * - 'message' is the message of the error: 'notconnected', or 'noteditable' for an element that is not an <input>,
-   * <textarea>, <select> or [contenteditable] and does not have a role allowing [aria-readonly].
+   * - 'message' is the message of the error: 'notconnected'; 'noteditable' for an element that is not an <input>,
+   * <textarea>, <select> or [contenteditable] and does not have a role allowing [aria-readonly]; or 'notcheckable'
+   * for an element that is not a checkbox or radio button and does not have a role allowing [aria-checked].
    */
   async queryElementStates(node: Node, states: ElementState[]): Promise<{ status: 'success' } | { status: 'failure', missingState: ElementState } | { status: 'error', message: string }> {
     if (states.includes('stable')) {
@@ -72,7 +73,7 @@ class ElementStateInspector {
     for (const state of states) {
       if (state !== 'stable') {
         const result = await this.queryElementState(node, state);
-        if (result.received === 'error:notconnected' || result.received === 'error:noteditable') {
+        if (result.received === 'error:notconnected' || result.received === 'error:noteditable' || result.received === 'error:notcheckable') {
           return { status: 'error', message: result.received.substring('error:'.length) };
         }
         if (!result.matches) {
@@ -89,8 +90,10 @@ class ElementStateInspector {
    * @param state {ElementStateWithoutStable} The state to query.
    * @returns {Promise<ElementStateQueryResult>} A Promise that resolves to an object with the status of the query.
    * - 'matches' is true if the state is present.
-   * - 'received' is the state that was received, 'error:notconnected' if the element is not connected, or
-   * 'error:noteditable' if the editable state is queried for an element that cannot be edited.
+   * - 'received' is the state that was received, 'error:notconnected' if the element is not connected,
+   * 'error:noteditable' if the editable state is queried for an element that cannot be edited, or
+   * 'error:notcheckable' if a checked state is queried for an element that cannot be checked.
+   * - 'isRadio', for a checked state, is true if the element is a radio button, which clicking cannot uncheck.
    * @throws {Error} If an invalid state is provided.
    */
   async queryElementState(node: Node, state: ElementStateWithoutStable): Promise<ElementStateQueryResult> {
@@ -129,6 +132,15 @@ class ElementStateInspector {
         matches: !disabled && !readonly,
         received: disabled ? 'disabled' : readonly ? 'readOnly' : 'editable'
       };
+    }
+
+    if (state === 'checked' || state === 'unchecked' || state === 'indeterminate') {
+      const checked = this.ariaUtilities.getAriaChecked(element);
+      if (checked === undefined) {
+        return { matches: false, received: 'error:notcheckable' };
+      }
+      const received = checked === 'mixed' ? 'indeterminate' : checked ? 'checked' : 'unchecked';
+      return { matches: received === state, received, isRadio: this.ariaUtilities.isAriaRadio(element) };
     }
 
     if (state === 'inview') {
@@ -233,33 +245,6 @@ class ElementStateInspector {
     } catch {
       throw new Error('timeout waiting for interaction to be ready');
     }
-  }
-
-  /**
-   * Focuses an element and selects its text, so that typing replaces it: the value of an <input> or <textarea>,
-   * or the contents of any other element, such as a [contenteditable] one.
-   * @param element {Element} The element whose text to select.
-   * @returns {boolean} True if the text was selected; false if the element is not connected.
-   */
-  selectText(element: Element): boolean {
-    if (!element.isConnected) {
-      return false;
-    }
-    const tagName = this.domUtilities.getNormalizedElementTagName(element);
-    if (tagName === 'INPUT' || tagName === 'TEXTAREA') {
-      (element as HTMLInputElement | HTMLTextAreaElement).select();
-      (element as HTMLElement).focus();
-      return true;
-    }
-    const range = element.ownerDocument.createRange();
-    range.selectNodeContents(element);
-    const selection = element.ownerDocument.getSelection();
-    if (selection) {
-      selection.removeAllRanges();
-      selection.addRange(range);
-    }
-    (element as HTMLElement).focus();
-    return true;
   }
 
   /**

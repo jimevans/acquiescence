@@ -197,65 +197,6 @@ describe('ElementStateInspector', () => {
     });
   });
 
-  describe('selectText', () => {
-    it('should select the value of an input and focus it', () => {
-      const input = document.createElement('input');
-      input.value = 'old value';
-      container.appendChild(input);
-
-      expect(inspector.selectText(input)).toBe(true);
-      expect(document.activeElement).toBe(input);
-      expect(input.selectionStart).toBe(0);
-      expect(input.selectionEnd).toBe('old value'.length);
-    });
-
-    it('should select the value of a textarea and focus it', () => {
-      const textarea = document.createElement('textarea');
-      textarea.value = 'first line\nsecond line';
-      container.appendChild(textarea);
-
-      expect(inspector.selectText(textarea)).toBe(true);
-      expect(document.activeElement).toBe(textarea);
-      expect(textarea.selectionStart).toBe(0);
-      expect(textarea.selectionEnd).toBe(textarea.value.length);
-    });
-
-    // jsdom collapses the selection when the element takes focus; browsers keep it.
-    testIf(isNativeDom(), 'should select the contents of any other element and focus it', () => {
-      const div = document.createElement('div');
-      div.contentEditable = 'true';
-      div.tabIndex = 0;
-      div.innerHTML = 'some <b>rich</b> text';
-      container.appendChild(div);
-
-      expect(inspector.selectText(div)).toBe(true);
-      expect(document.activeElement).toBe(div);
-      const range = document.getSelection()?.getRangeAt(0);
-      expect(range?.startContainer).toBe(div);
-      expect(range?.startOffset).toBe(0);
-      expect(range?.endContainer).toBe(div);
-      expect(range?.endOffset).toBe(div.childNodes.length);
-    });
-
-    it('should select nothing in an element that is not connected', () => {
-      const input = document.createElement('input');
-      input.value = 'detached';
-
-      expect(inspector.selectText(input)).toBe(false);
-      expect(document.activeElement).not.toBe(input);
-    });
-
-    it('should focus an element of a document that has no selection', () => {
-      const otherDocument = document.implementation.createHTMLDocument('no browsing context');
-      const div = otherDocument.createElement('div');
-      otherDocument.body.appendChild(div);
-      const getSelection = vi.spyOn(otherDocument, 'getSelection').mockReturnValue(null);
-
-      expect(inspector.selectText(div)).toBe(true);
-      expect(getSelection).toHaveBeenCalled();
-    });
-  });
-
   describe('isElementReadOnly', () => {
     it('should return false for editable input', () => {
       const input = document.createElement('input');
@@ -650,6 +591,41 @@ describe('ElementStateInspector', () => {
       const result = await inspector.queryElementState(div, 'hidden');
       expect(result.matches).toBe(true);
       expect(result.received).toBe('hidden');
+    });
+  });
+
+  describe('queryElementState - checked/unchecked/indeterminate', () => {
+    it('should report the checked state of a checkbox', async () => {
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      container.appendChild(checkbox);
+
+      expect(await inspector.queryElementState(checkbox, 'checked')).toEqual({ matches: false, received: 'unchecked', isRadio: false });
+      checkbox.checked = true;
+      expect(await inspector.queryElementState(checkbox, 'checked')).toEqual({ matches: true, received: 'checked', isRadio: false });
+      checkbox.indeterminate = true;
+      expect(await inspector.queryElementState(checkbox, 'indeterminate')).toEqual({ matches: true, received: 'indeterminate', isRadio: false });
+      expect(await inspector.queryElementState(checkbox, 'unchecked')).toEqual({ matches: false, received: 'indeterminate', isRadio: false });
+    });
+
+    it('should report radio buttons and roles allowing aria-checked', async () => {
+      const radio = document.createElement('input');
+      radio.type = 'radio';
+      const option = document.createElement('div');
+      option.setAttribute('role', 'switch');
+      option.setAttribute('aria-checked', 'false');
+      container.append(radio, option);
+
+      expect(await inspector.queryElementState(radio, 'unchecked')).toEqual({ matches: true, received: 'unchecked', isRadio: true });
+      expect(await inspector.queryElementState(option, 'unchecked')).toEqual({ matches: true, received: 'unchecked', isRadio: false });
+    });
+
+    it('should report elements that cannot be checked', async () => {
+      const button = document.createElement('button');
+      container.appendChild(button);
+
+      expect(await inspector.queryElementState(button, 'checked')).toEqual({ matches: false, received: 'error:notcheckable' });
+      expect(await inspector.queryElementStates(button, ['checked'])).toEqual({ status: 'error', message: 'notcheckable' });
     });
   });
 
