@@ -371,6 +371,15 @@ class AriaUtilities {
   }
 
   /**
+   * Gets a value indicating whether a name is that of an ARIA role.
+   * @param name {string} The name to check.
+   * @returns {boolean} True if the name is that of an ARIA role; otherwise, false.
+   */
+  isAriaRole(name: string): boolean {
+    return this.validRoles.includes(name as AriaRole);
+  }
+
+  /**
    * Gets the elements that an ID reference attribute of an element, such as aria-owns or aria-describedby, refers to.
    * @param element {Element} The element whose attribute to read.
    * @param attributeName {string} The name of the attribute, holding a space-separated list of IDs.
