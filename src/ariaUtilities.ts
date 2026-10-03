@@ -157,15 +157,7 @@ class AriaUtilities {
     },
     'TEXTAREA': () => 'textbox',
     'TFOOT': () => 'rowgroup',
-    'TH': (e: Element) => {
-      if (e.getAttribute('scope') === 'col')
-        return 'columnheader';
-      if (e.getAttribute('scope') === 'row')
-        return 'rowheader';
-      const table = this.domUtilities.getClosestCrossShadowElement(e, 'table');
-      const role = table ? this.getExplicitAriaRole(table) : '';
-      return (role === 'grid' || role === 'treegrid') ? 'gridcell' : 'cell';
-    },
+    'TH': (e: Element) => this.getTableHeaderRole(e),
     'THEAD': () => 'rowgroup',
     'TIME': () => 'time',
     'TR': () => 'row',
@@ -366,6 +358,19 @@ class AriaUtilities {
   }
 
   /**
+   * Gets the disabled state of an element whose role supports it: natively disabled, or aria-disabled on it or an ancestor.
+   * @param element {Element} The element to check.
+   * @returns {boolean | undefined} The disabled state, or undefined if the element's role cannot be disabled.
+   */
+  getAriaDisabled(element: Element): boolean | undefined {
+    // https://www.w3.org/TR/wai-aria-1.2/#aria-disabled
+    if (!this.ariaDisabledRoles.includes(this.getAriaRole(element) ?? '')) {
+      return undefined;
+    }
+    return this.domUtilities.isNativelyDisabled(element) || this.hasExplicitAriaDisabled(element);
+  }
+
+  /**
    * Gets the elements that an ID reference attribute of an element, such as aria-owns or aria-describedby, refers to.
    * @param element {Element} The element whose attribute to read.
    * @param attributeName {string} The name of the attribute, holding a space-separated list of IDs.
@@ -481,6 +486,54 @@ class AriaUtilities {
     }
     const style = this.domUtilities.getElementComputedStyle(element);
     return !style || style.display === 'none' || (element.getAttribute('aria-hidden') ?? '').toLowerCase() === 'true';
+  }
+
+  /**
+   * Gets the role of a th element: from its scope attribute, or else from its neighbors as Chromium does.
+   * @param element {Element} The th element.
+   * @returns {AriaRole | null} The role: columnheader or rowheader, or null for the only cell of a single-row table.
+   */
+  private getTableHeaderRole(element: Element): AriaRole | null {
+    // https://w3c.github.io/html-aam/#el-th
+    const scope = element.getAttribute('scope');
+    if (scope === 'col' || scope === 'colgroup') {
+      return 'columnheader';
+    }
+    if (scope === 'row' || scope === 'rowgroup') {
+      return 'rowheader';
+    }
+    const previous = element.previousElementSibling;
+    const next = element.nextElementSibling;
+    if (!previous && !next) {
+      // A header that is the only cell of the only row of its table heads nothing, so Chromium gives it no role.
+      const table = element.parentElement?.closest('table');
+      return table && table.rows.length <= 1 ? null : 'columnheader';
+    }
+    // Chromium looks only at the immediate neighbors:
+    // https://source.chromium.org/chromium/chromium/src/+/main:third_party/blink/renderer/modules/accessibility/ax_node_object.cc
+    if (this.isTagName(previous, 'TH') && this.isTagName(next, 'TH')) {
+      return 'columnheader';
+    }
+    return this.isNonEmptyDataCell(previous) || this.isNonEmptyDataCell(next) ? 'rowheader' : 'columnheader';
+  }
+
+  /**
+   * Gets a value indicating whether an element is a td element with content.
+   * @param element {Element | null} The element to check.
+   * @returns {boolean} True if the element is a td element with text or child elements; otherwise, false.
+   */
+  private isNonEmptyDataCell(element: Element | null): boolean {
+    return this.isTagName(element, 'TD') && (!!element?.textContent?.trim() || !!element?.children.length);
+  }
+
+  /**
+   * Gets a value indicating whether an element has a given tag name.
+   * @param element {Element | null} The element to check.
+   * @param tagName {string} The normalized tag name.
+   * @returns {boolean} True if the element exists and has the tag name; otherwise, false.
+   */
+  private isTagName(element: Element | null, tagName: string): boolean {
+    return !!element && this.domUtilities.getNormalizedElementTagName(element) === tagName;
   }
 
   /**

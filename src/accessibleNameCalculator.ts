@@ -129,6 +129,23 @@ class AccessibleNameCalculator {
   }
 
   /**
+   * Gets the text that the CSS content property gives an element or one of its pseudo-elements.
+   * @param element {Element} The element.
+   * @param pseudo {'::before' | '::after' | undefined} The pseudo-element. If omitted, the element itself.
+   * @returns {string | undefined} The text, or undefined if there is no content, it is hidden, or it cannot be read.
+   */
+  getCssContent(element: Element, pseudo?: '::before' | '::after'): string | undefined {
+    // https://w3c.github.io/accname/#computation-steps step 2F.ii, and https://github.com/w3c/accname/issues/204
+    const style = this.domUtilities.getElementComputedStyle(element, pseudo);
+    if (!style || ['', 'none', 'normal'].includes(style.content) || style.display === 'none' || style.visibility === 'hidden') {
+      return undefined;
+    }
+    const content = this.parseCssContent(element, style.content, !!pseudo);
+    // Browsers separate the content of a pseudo-element that is not inline with spaces, as the specification does not.
+    return pseudo && content !== undefined && style.display !== 'inline' ? ` ${content} ` : content;
+  }
+
+  /**
    * Computes the text alternative of an element, the recursive step 2 of the computation.
    * @param element {Element} The element to compute the text alternative of.
    * @param context {TextAlternativeContext} The state of the computation.
@@ -435,23 +452,6 @@ class AccessibleNameCalculator {
     // Browsers separate the text of elements that are not inline, and of line breaks, with spaces.
     const display = this.domUtilities.getElementComputedStyle(element)?.display ?? 'inline';
     return display !== 'inline' || this.domUtilities.getNormalizedElementTagName(element) === 'BR' ? ` ${text} ` : text;
-  }
-
-  /**
-   * Gets the text that the CSS content property gives an element or one of its pseudo-elements.
-   * @param element {Element} The element.
-   * @param pseudo {'::before' | '::after' | undefined} The pseudo-element. If omitted, the element itself.
-   * @returns {string | undefined} The text, or undefined if there is no content, it is hidden, or it cannot be read.
-   */
-  private getCssContent(element: Element, pseudo?: '::before' | '::after'): string | undefined {
-    // https://w3c.github.io/accname/#computation-steps step 2F.ii, and https://github.com/w3c/accname/issues/204
-    const style = this.domUtilities.getElementComputedStyle(element, pseudo);
-    if (!style || ['', 'none', 'normal'].includes(style.content) || style.display === 'none' || style.visibility === 'hidden') {
-      return undefined;
-    }
-    const content = this.parseCssContent(element, style.content, !!pseudo);
-    // Browsers separate the content of a pseudo-element that is not inline with spaces, as the specification does not.
-    return pseudo && content !== undefined && style.display !== 'inline' ? ` ${content} ` : content;
   }
 
   /**

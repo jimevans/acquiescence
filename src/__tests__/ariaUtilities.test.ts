@@ -882,15 +882,23 @@ describe('AriaUtilities', () => {
         expect(ariaUtils.isAriaReadOnlyRole(th)).toBe(true);
       });
 
-      it('should recognize th as gridcell in grid without scope', () => {
-        const th = document.createElement('th');
-        const tr = document.createElement('tr');
-        const table = document.createElement('table');
-        table.setAttribute('role', 'grid');
-        tr.appendChild(th);
-        table.appendChild(tr);
-        container.appendChild(table);
-        expect(ariaUtils.isAriaReadOnlyRole(th)).toBe(true);
+      it('should give th elements without scope the header roles Chromium gives them', () => {
+        const roleOf = (html: string, selector = 'th'): string | null => {
+          container.innerHTML = html;
+          return ariaUtils.getAriaRole(container.querySelector(selector)!);
+        };
+        expect(roleOf('<table><tr><th>Only</th></tr></table>')).toBeNull();
+        expect(roleOf('<table><tr><th>Only</th></tr><tr><td>1</td></tr></table>')).toBe('columnheader');
+        expect(roleOf('<table role="grid"><tr><th>A</th><th id="t">B</th><th>C</th></tr></table>', '#t')).toBe('columnheader');
+        expect(roleOf('<table><tr><th>Name</th><td>Ada</td></tr></table>')).toBe('rowheader');
+        expect(roleOf('<table><tr><td><b></b></td><th>Name</th></tr></table>')).toBe('rowheader');
+        expect(roleOf('<table><tr><th>Name</th><td> </td></tr></table>')).toBe('columnheader');
+        expect(roleOf('<table><tr><th>A</th><th id="t">B</th></tr></table>', '#t')).toBe('columnheader');
+        expect(roleOf('<table><tr><th scope="colgroup">A</th></tr></table>')).toBe('columnheader');
+        expect(roleOf('<table><tr><th scope="rowgroup">A</th></tr></table>')).toBe('rowheader');
+        const loose = document.createElement('th');
+        container.replaceChildren(loose);
+        expect(ariaUtils.getAriaRole(loose)).toBe('columnheader');
       });
 
       it('should recognize tbody as rowgroup', () => {
@@ -933,26 +941,6 @@ describe('AriaUtilities', () => {
         expect(ariaUtils.isAriaReadOnlyRole(td)).toBe(false);
       });
 
-      it('should handle th element without parent table', () => {
-        // Create a TH that's not inside a table structure
-        const th = document.createElement('th');
-        container.appendChild(th);
-        // getClosestCrossShadowElement will return null, should default to cell
-        expect(ariaUtils.isAriaReadOnlyRole(th)).toBe(false);
-      });
-
-      it('should recognize th as cell when table has no grid role', () => {
-        const th = document.createElement('th');
-        const tr = document.createElement('tr');
-        const table = document.createElement('table');
-        // No scope attribute and no grid/treegrid role on table
-        tr.appendChild(th);
-        table.appendChild(tr);
-        container.appendChild(table);
-        // Should return cell, not gridcell
-        expect(ariaUtils.isAriaReadOnlyRole(th)).toBe(false);
-      });
-
       it('should recognize td as cell when table has no grid role (explicit test)', () => {
         const td = document.createElement('td');
         const tr = document.createElement('tr');
@@ -965,17 +953,6 @@ describe('AriaUtilities', () => {
         expect(ariaUtils.isAriaReadOnlyRole(td)).toBe(false);
       });
 
-      it('should recognize th as cell when table has non-grid role', () => {
-        const th = document.createElement('th');
-        const tr = document.createElement('tr');
-        const table = document.createElement('table');
-        table.setAttribute('role', 'table'); // Explicitly set to table role
-        tr.appendChild(th);
-        table.appendChild(tr);
-        container.appendChild(table);
-        // Role is 'table', not 'grid' or 'treegrid', so should be cell
-        expect(ariaUtils.isAriaReadOnlyRole(th)).toBe(false);
-      });
     });
 
     describe('Select Element', () => {
@@ -2061,6 +2038,19 @@ describe('AriaUtilities', () => {
       expect(ariaUtils.getAriaRole(nav)).toBe('navigation');
       expect(ariaUtils.getAriaRole(plain)).toBeNull();
       expect(ariaUtils.getAriaRole(image)).toBe('presentation');
+    });
+  });
+
+  describe('getAriaDisabled', () => {
+    it('should report the disabled state of roles that support it', () => {
+      container.innerHTML = '<button disabled>a</button><div role="button" aria-disabled="true">b</div><div aria-disabled="true"><span role="tab">c</span></div><button>d</button><nav aria-disabled="true">e</nav><div aria-disabled="true">f</div>';
+      const [native, aria, parent, enabled, nav, plain] = Array.from(container.children);
+      expect(ariaUtils.getAriaDisabled(native)).toBe(true);
+      expect(ariaUtils.getAriaDisabled(aria)).toBe(true);
+      expect(ariaUtils.getAriaDisabled(parent.firstElementChild!)).toBe(true);
+      expect(ariaUtils.getAriaDisabled(enabled)).toBe(false);
+      expect(ariaUtils.getAriaDisabled(nav)).toBeUndefined();
+      expect(ariaUtils.getAriaDisabled(plain)).toBeUndefined();
     });
   });
 
