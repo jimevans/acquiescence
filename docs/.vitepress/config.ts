@@ -33,7 +33,8 @@ export default defineConfig({
           items: [
             { text: 'Element States', link: '/guide/element-states' },
             { text: 'Interactions', link: '/guide/interactions' },
-            { text: 'Stability Detection', link: '/guide/stability' }
+            { text: 'Stability Detection', link: '/guide/stability' },
+            { text: 'Accessibility Snapshots', link: '/guide/accessibility-snapshots' }
           ]
         },
         {
@@ -51,7 +52,8 @@ export default defineConfig({
             { text: 'Basic Usage', link: '/examples/basic-usage' },
             { text: 'Checking States', link: '/examples/checking-states' },
             { text: 'Waiting for Interactions', link: '/examples/waiting-interactions' },
-            { text: 'Advanced Patterns', link: '/examples/advanced-patterns' }
+            { text: 'Advanced Patterns', link: '/examples/advanced-patterns' },
+            { text: 'Accessibility Snapshots', link: '/examples/accessibility-snapshots' }
           ]
         }
       ],

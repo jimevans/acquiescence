@@ -33,6 +33,10 @@ features:
     title: TypeScript First
     details: Built with TypeScript for excellent type safety and IntelliSense support in your IDE.
   
+  - icon: ♿
+    title: Accessibility Snapshots
+    details: Describe a page as assistive technology sees it, in a format compatible with Playwright's aria snapshots, with refs to act on and templates to match.
+
   - icon: 🌐
     title: Shadow DOM Support
     details: Full support for Shadow DOM, including closed shadow roots and composed tree traversal.

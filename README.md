@@ -24,6 +24,7 @@ Perfect for:
 - **⏱️ Wait for Interactions** - Automatically wait for elements to be ready for interaction, with built-in stability detection and smart scrolling
 - **🎯 Precise Hit Testing** - Determine exact click points and detect element obstruction with accurate hit testing that respects Shadow DOM
 - **🚀 TypeScript First** - Built with TypeScript for excellent type safety and IntelliSense support in your IDE
+- **♿ Accessibility Snapshots** - Describe a page as assistive technology sees it, in a format compatible with Playwright's aria snapshots, with refs to act on and templates to match
 - **🌐 Shadow DOM Support** - Full support for Shadow DOM, including closed shadow roots and composed tree traversal
 - **⚡ Performance Optimized** - Smart caching of computed styles and efficient polling strategies for minimal performance impact
 
@@ -187,6 +188,38 @@ if (readOnly === true) {
 }
 ```
 
+### Accessibility Snapshots
+
+Take a snapshot of part of a page: each element with a role, its accessible name and states, and the text between them, in a format compatible with [Playwright's aria snapshots](https://playwright.dev/docs/aria-snapshots).
+
+```typescript
+import { AriaSnapshotGenerator, AriaSnapshotMatcher } from 'acquiescence';
+
+const generator = new AriaSnapshotGenerator();
+const snapshot = generator.generate(document.body);
+console.log(snapshot.text);
+// - navigation "Main" [ref=e3]:
+//   - link "Home" [ref=e4]:
+//     - /url: /
+// ...
+// - button "Sign in" [ref=e10]
+
+// Each ref leads back to its element.
+const button = snapshot.references.find((reference) => reference.ref === 'e10')?.element;
+
+// Match a snapshot against a template.
+const matcher = new AriaSnapshotMatcher();
+const result = matcher.match(document.body, `
+  - navigation "Main":
+    - link "Home"
+`);
+console.log(result.matches); // true
+```
+
+Acquiescence computes accessible names itself, following the Accessible Name and Description Computation and the HTML Accessibility API Mappings. Browsers compute names in their own accessibility engines, which pages cannot read, so a snapshot's names can differ from what the browser reports, for example with CSS generated content or controls embedded in labels. To act on an element from a snapshot, use its ref.
+
+See the [Accessibility Snapshots guide](https://jimevans.github.io/acquiescence/guide/accessibility-snapshots) for the format, refs, and template syntax.
+
 ## Browser Support
 
 Acquiescence can be used in both Node.js environments (with jsdom) and directly in the browser.
@@ -219,6 +252,14 @@ The main class for querying element states and waiting for interactions.
 - `isElementDisabled(element)` - Helper to check disabled state
 - `isElementReadOnly(element)` - Helper to check read-only state
 
+### `AriaSnapshotGenerator`
+
+- `generate(element, options?)` - Take an accessibility snapshot of an element and its descendants; returns its `text`, its tree (`root`), and its `references`
+
+### `AriaSnapshotMatcher`
+
+- `match(element, template)` - Match the snapshot of an element against a template; returns `{ matches, actual }`
+
 For complete API documentation, see the [full API reference](https://yourusername.github.io/element-state/api/).
 
 ## Documentation
@@ -230,6 +271,7 @@ For more detailed documentation, guides, and examples, visit:
 - [Getting Started Guide](https://jimevans.github.io/acquiescence/guide/getting-started)
 - [Element States Guide](https://jimevans.github.io/acquiescence/guide/element-states)
 - [Interaction Types Guide](https://jimevans.github.io/acquiescence/guide/interactions)
+- [Accessibility Snapshots Guide](https://jimevans.github.io/acquiescence/guide/accessibility-snapshots)
 - [Best Practices](https://jimevans.github.io/acquiescence/guide/best-practices)
 - [API Reference](https://jimevans.github.io/acquiescence/api/)
 

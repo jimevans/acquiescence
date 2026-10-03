@@ -10,6 +10,7 @@ Acquiescence provides a TypeScript-first API for querying element states and wai
 - **State Types**: Predefined element states like `visible`, `enabled`, `stable`
 - **Interaction Types**: Different types of user interactions like `click`, `type`, `hover`
 - **Waiters**: Helper classes for polling with timeouts
+- **AriaSnapshotGenerator** and **AriaSnapshotMatcher**: Accessibility snapshots of a page, and matching them against templates
 
 ## Quick Reference
 
@@ -387,6 +388,100 @@ if (rect) {
 }
 ```
 
+## Accessibility Snapshots
+
+The [Accessibility Snapshots guide](/guide/accessibility-snapshots) describes the snapshot format and the template syntax in full.
+
+### AriaSnapshotGenerator
+
+Takes accessibility snapshots.
+
+```typescript
+generate(rootElement: Element, options?: AriaSnapshotOptions): AriaSnapshot
+```
+
+**Parameters:**
+- `rootElement`: The element to take the snapshot of, which is included if it has a role
+- `options`: `refs` (default `true`) gives each node a ref; `refPrefix` (default `''`) is put before each ref
+
+**Returns:** An `AriaSnapshot`: `text`, the snapshot in the snapshot format; `root`, the snapshot as a tree of `AriaNode` objects under a `fragment` node; and `references`, each ref with the element it refers to
+
+**Example:**
+```typescript
+import { AriaSnapshotGenerator } from 'acquiescence';
+
+const generator = new AriaSnapshotGenerator();
+const snapshot = generator.generate(document.body);
+console.log(snapshot.text);
+// - heading "Welcome, Ada" [level=1] [ref=e2]
+```
+
+An element keeps its ref across snapshots taken by the same generator.
+
+---
+
+### AriaSnapshotMatcher
+
+Matches the accessibility snapshot of an element against a template.
+
+```typescript
+match(rootElement: Element, template: string): AriaSnapshotMatchResult
+```
+
+**Parameters:**
+- `rootElement`: The element whose snapshot to match
+- `template`: A template in the snapshot format
+
+**Returns:** `{ matches, actual }`: whether the snapshot matches, and the snapshot's text without refs
+
+**Throws:** Error if the template is not valid, naming the line and column
+
+**Example:**
+```typescript
+import { AriaSnapshotMatcher } from 'acquiescence';
+
+const matcher = new AriaSnapshotMatcher();
+const result = matcher.match(document.body, '- heading "Welcome, Ada" [level=1]');
+console.log(result.matches); // true
+```
+
+### Snapshot Types
+
+```typescript
+type AriaSnapshotOptions = {
+  refs?: boolean;      // Whether to give nodes refs; defaults to true
+  refPrefix?: string;  // Text before each ref; defaults to ''
+};
+
+type AriaSnapshot = {
+  root: AriaNode;                       // A fragment whose children are the snapshot's nodes
+  text: string;                         // The snapshot as text
+  references: AriaSnapshotReference[];  // Each ref and its element, in document order
+};
+
+type AriaSnapshotReference = { ref: string; element: Element };
+
+type AriaNode = {
+  role: string;                         // An ARIA role, 'iframe', or 'fragment'
+  name: string;
+  ref?: string;
+  checked?: boolean | 'mixed';
+  disabled?: boolean;
+  expanded?: boolean;
+  level?: number;
+  pressed?: boolean | 'mixed';
+  selected?: boolean;
+  url?: string;
+  placeholder?: string;
+  children: Array<AriaNode | string>;   // Child nodes and runs of text
+};
+
+type AriaSnapshotMatchResult = {
+  matches: boolean;
+  actual: string;                       // The snapshot's text without refs
+};
+```
+
 ## Helper Classes
 
 ### TimeoutWaiter
@@ -465,6 +560,7 @@ Requires support for:
 ## Next Steps
 
 - Explore [Examples](/examples/basic-usage)
+- Read the [Accessibility Snapshots guide](/guide/accessibility-snapshots)
 - Review [Best Practices](/guide/best-practices)
 - See [Getting Started Guide](/guide/getting-started)
 
