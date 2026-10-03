@@ -42,9 +42,10 @@ class ElementStateInspector {
   private readonly ariaUtilities = new AriaUtilities();
   private readonly domUtilities = new DOMUtilities();
   private readonly nodePreviewer = new NodePreviewer();
-  private cacheStyle: Map<Element, CSSStyleDeclaration | undefined> | undefined;
-  private cacheStyleBefore: Map<Element, CSSStyleDeclaration | undefined> | undefined;
-  private cacheStyleAfter: Map<Element, CSSStyleDeclaration | undefined> | undefined;
+  // Computed styles are live, so a cached one stays current; holding them weakly lets removed elements be collected.
+  private readonly cacheStyle = new WeakMap<Element, CSSStyleDeclaration | undefined>();
+  private readonly cacheStyleBefore = new WeakMap<Element, CSSStyleDeclaration | undefined>();
+  private readonly cacheStyleAfter = new WeakMap<Element, CSSStyleDeclaration | undefined>();
 
   /**
    * Queries a Node for a list of states.
@@ -982,16 +983,15 @@ class ElementStateInspector {
   /**
    * Gets the cache for a pseudo-element type.
    * @param pseudo {string | undefined} The pseudo-element type to get the cache for. If omitted, the cache for main elements is returned.
-   * @returns {Map<Element, CSSStyleDeclaration | undefined>} The cache for the pseudo-element.
-   * If no cache has yet been created for the pseudo-element, a new cache is created and returned.
+   * @returns {WeakMap<Element, CSSStyleDeclaration | undefined>} The cache for the pseudo-element.
    */
-  private getCache(pseudo?: string): Map<Element, CSSStyleDeclaration | undefined> {
+  private getCache(pseudo?: string): WeakMap<Element, CSSStyleDeclaration | undefined> {
     if (pseudo === '::before') {
-      return this.cacheStyleBefore ??= new Map<Element, CSSStyleDeclaration | undefined>();
+      return this.cacheStyleBefore;
     } else if (pseudo === '::after') {
-      return this.cacheStyleAfter ??= new Map<Element, CSSStyleDeclaration | undefined>();
+      return this.cacheStyleAfter;
     } else {
-      return this.cacheStyle ??= new Map<Element, CSSStyleDeclaration | undefined>();
+      return this.cacheStyle;
     }
   }
   

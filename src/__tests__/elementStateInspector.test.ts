@@ -3718,6 +3718,12 @@ describe('ElementStateInspector', () => {
     });
 
     describe('Style caching with pseudo elements', () => {
+      it('should hold cached styles weakly, so that removed elements can be collected', () => {
+        for (const pseudo of [undefined, '::before', '::after']) {
+          expect((inspector as any).getCache(pseudo)).toBeInstanceOf(WeakMap);
+        }
+      });
+
       it('should cache styles for ::before pseudo element', () => {
         // Test ::before cache
         const div = document.createElement('div');
