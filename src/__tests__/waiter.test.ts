@@ -2,6 +2,16 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { TimeoutWaiter, RequestAnimationFrameWaiter } from '../waiter';
 
 describe('TimeoutWaiter', () => {
+  // Fake timers, including performance.now(), make check times exact rather than subject to timer scheduling.
+  const withFakeTimers = async (body: () => Promise<void>): Promise<void> => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'performance'] });
+    try {
+      await body();
+    } finally {
+      vi.useRealTimers();
+    }
+  };
+
   describe('constructor', () => {
     it('should create a TimeoutWaiter with valid parameters', () => {
       const condition = () => true;
@@ -133,46 +143,42 @@ describe('TimeoutWaiter', () => {
     }, 1000);
 
     it('should respect timeout even with very short intervals', async () => {
-      let callCount = 0;
-      const condition = () => {
-        callCount++;
-        return false;
-      };
+      await withFakeTimers(async () => {
+        let callCount = 0;
+        const condition = () => {
+          callCount++;
+          return false;
+        };
 
-      const waiter = new TimeoutWaiter(condition, 50, [5]);
-      
-      await expect(waiter.waitForCondition()).rejects.toThrow('Timeout after 50ms');
-      
-      expect(callCount).toBeGreaterThanOrEqual(5);
-    }, 1000);
+        await Promise.all([
+          expect(new TimeoutWaiter(condition, 50, [5]).waitForCondition()).rejects.toThrow('Timeout after 50ms'),
+          vi.advanceTimersByTimeAsync(50),
+        ]);
+
+        // Checks run at once and every 5ms up to the timeout, the last at 50ms.
+        expect(callCount).toBe(11);
+      });
+    });
   });
 
   describe('waitForCondition - interval progression', () => {
     it('should use different intervals in sequence', async () => {
-      const checkTimes: number[] = [];
-      const startTime = performance.now();
-      
-      const condition = () => {
-        checkTimes.push(performance.now() - startTime);
-        return checkTimes.length === 4 ? 'done' : false;
-      };
+      await withFakeTimers(async () => {
+        const checkTimes: number[] = [];
+        const startTime = performance.now();
+        const condition = () => {
+          checkTimes.push(performance.now() - startTime);
+          return checkTimes.length === 4 ? 'done' : false;
+        };
 
-      const waiter = new TimeoutWaiter(condition, 500, [10, 20, 30]);
-      await waiter.waitForCondition();
+        const result = new TimeoutWaiter(condition, 500, [10, 20, 30]).waitForCondition();
+        await vi.advanceTimersByTimeAsync(60);
 
-      expect(checkTimes.length).toBe(4);
-      // First check is immediate (around 0ms)
-      expect(checkTimes[0]).toBeLessThan(5);
-      // Second check after ~10ms
-      expect(checkTimes[1]).toBeGreaterThanOrEqual(8);
-      expect(checkTimes[1]).toBeLessThan(20);
-      // Third check after ~30ms (10 + 20)
-      expect(checkTimes[2]).toBeGreaterThanOrEqual(25);
-      expect(checkTimes[2]).toBeLessThan(40);
-      // Fourth check after ~60ms (10 + 20 + 30)
-      expect(checkTimes[3]).toBeGreaterThanOrEqual(50);
-      expect(checkTimes[3]).toBeLessThan(80);
-    }, 1000);
+        await expect(result).resolves.toBe('done');
+        // Checks run at once, then after 10ms, 20ms more, and 30ms more.
+        expect(checkTimes).toEqual([0, 10, 30, 60]);
+      });
+    });
 
     it('should stick with last interval after exhausting interval array', async () => {
       let callCount = 0;
@@ -643,28 +649,23 @@ describe('TimeoutWaiter', () => {
     }, 1000);
 
     it('should enforce timeout based on performance.now()', async () => {
-      const checkTimes: number[] = [];
-      const startTime = performance.now();
-      
-      const condition = () => {
-        checkTimes.push(performance.now() - startTime);
-        return false;
-      };
+      await withFakeTimers(async () => {
+        const checkTimes: number[] = [];
+        const startTime = performance.now();
+        const condition = () => {
+          checkTimes.push(performance.now() - startTime);
+          return false;
+        };
 
-      const waiter = new TimeoutWaiter(condition, 50, [10]);
-      
-      await expect(waiter.waitForCondition()).rejects.toThrow('Timeout after 50ms');
-      
-      // Verify that checks happened and timeout was enforced
-      expect(checkTimes.length).toBeGreaterThan(1);
-      // Last check should be reasonably close to the timeout.
-      // We allow a generous margin (100ms for a 50ms timeout) because:
-      // - setTimeout is not precise (HTML5 spec allows 4ms+ delays)
-      // - Delays compound over multiple intervals
-      // - Browsers may throttle timers differently (especially Firefox)
-      // - Event loop delays can affect timing
-      expect(checkTimes[checkTimes.length - 1]).toBeLessThan(100);
-    }, 1000);
+        await Promise.all([
+          expect(new TimeoutWaiter(condition, 50, [10]).waitForCondition()).rejects.toThrow('Timeout after 50ms'),
+          vi.advanceTimersByTimeAsync(50),
+        ]);
+
+        // The check at 50ms reaches the timeout, so the wait ends there.
+        expect(checkTimes).toEqual([0, 10, 20, 30, 40, 50]);
+      });
+    });
   });
 
   describe('Waiter interface compliance', () => {
