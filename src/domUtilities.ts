@@ -199,6 +199,42 @@ class DOMUtilities {
   }
 
   /**
+   * Gets the computed style of an element or one of its pseudo-elements.
+   * @param element {Element} The element to get the computed style of.
+   * @param pseudo {string | undefined} The pseudo-element to get the computed style of. If omitted, the style of the element itself is returned.
+   * @returns {CSSStyleDeclaration | undefined} The computed style, or undefined if the element is not in a document with a window.
+   */
+  getElementComputedStyle(element: Element, pseudo?: string): CSSStyleDeclaration | undefined {
+    return element.ownerDocument?.defaultView ? element.ownerDocument.defaultView.getComputedStyle(element, pseudo) : undefined;
+  }
+
+  /**
+   * Gets a value indicating whether a text node takes up space when rendered.
+   * @param node {Text} The text node to check.
+   * @returns {boolean} True if the text node is visible; otherwise, false.
+   */
+  isVisibleTextNode(node: Text): boolean {
+    // https://stackoverflow.com/questions/1461059/is-there-an-equivalent-to-getboundingclientrect-for-text-nodes
+    const range = node.ownerDocument.createRange();
+    range.selectNode(node);
+    const rect = range.getBoundingClientRect();
+    return rect.width > 0 && rect.height > 0;
+  }
+
+  /**
+   * Gets a value indicating whether an element is visible as defined in its style: rendered, and with a visibility of visible.
+   * @param element {Element} The element to check.
+   * @param style {CSSStyleDeclaration | undefined} The computed style of the element.
+   * @returns {boolean} True if the element's style makes it visible, or if it has no computed style; otherwise, false.
+   */
+  isStyleVisibilityVisible(element: Element, style: CSSStyleDeclaration | undefined): boolean {
+    if (!style) {
+      return true;
+    }
+    return element.checkVisibility() && style.visibility === 'visible';
+  }
+
+  /**
    * Gets a value indicating whether an element is natively focusable.
    * @param element {Element} The element to check.
    * @returns {boolean} True if the element is natively focusable; otherwise, false.

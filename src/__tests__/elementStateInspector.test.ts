@@ -3880,34 +3880,6 @@ describe('ElementStateInspector', () => {
       });
     });
 
-    describe('isElementStyleVisibilityVisible - undefined style', () => {
-      it('should return true when style is undefined', () => {
-        // Test undefined style in isElementStyleVisibilityVisible
-        const div = document.createElement('div');
-        // Don't append to document initially
-        
-        // Call with undefined style - should get computed style
-        const result1 = (inspector as any).isElementStyleVisibilityVisible(div, undefined);
-        expect(typeof result1).toBe('boolean');
-        
-        // Now with element in document
-        container.appendChild(div);
-        const result2 = (inspector as any).isElementStyleVisibilityVisible(div, undefined);
-        expect(typeof result2).toBe('boolean');
-      });
-
-      it('should handle element with no default view', () => {
-        // Test when getComputedStyle might return undefined
-        const detachedDoc = document.implementation.createHTMLDocument('test');
-        const detachedDiv = detachedDoc.createElement('div');
-        
-        // Element in detached document might have different behavior
-        const result = (inspector as any).isElementStyleVisibilityVisible(detachedDiv);
-        expect(typeof result).toBe('boolean');
-      });
-    });
-
-
     describe('getHitElementFromPoint - display:contents workaround', () => {
       testIf(isNativeDom(), 'should unshift display:contents element when missing from elementsFromPoint', async () => {
         // Test Chromium bug workaround for display:contents

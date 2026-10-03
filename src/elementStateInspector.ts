@@ -947,30 +947,17 @@ class ElementStateInspector {
         if (child.nodeType === 1 /* Node.ELEMENT_NODE */ && this.isElementVisible(child as Element)) {
           return { visible: true, inline: false, cursor };
         }
-        if (child.nodeType === 3 /* Node.TEXT_NODE */ && this.isVisibleTextNode(child as Text)) {
+        if (child.nodeType === 3 /* Node.TEXT_NODE */ && this.domUtilities.isVisibleTextNode(child as Text)) {
           return { visible: true, inline: true, cursor };
         }
       }
       return { visible: false, inline: false, cursor };
     }
-    if (!this.isElementStyleVisibilityVisible(element, style)) { 
+    if (!this.domUtilities.isStyleVisibilityVisible(element, style)) {
       return { cursor, visible: false, inline: false };
     }
     const rect = element.getBoundingClientRect();
     return { rect, cursor, visible: rect.width > 0 && rect.height > 0, inline: style.display === 'inline' };
-  }
-
-  /**
-   * Checks if a text node is visible.
-   * @param node {Text} The text node to check.
-   * @returns {boolean} True if the text node is visible; otherwise, false.
-   */
-  private isVisibleTextNode(node: Text) {
-    // https://stackoverflow.com/questions/1461059/is-there-an-equivalent-to-getboundingclientrect-for-text-nodes
-    const range = node.ownerDocument.createRange();
-    range.selectNode(node);
-    const rect = range.getBoundingClientRect();
-    return rect.width > 0 && rect.height > 0;
   }
 
   /**
@@ -987,7 +974,7 @@ class ElementStateInspector {
     if (cache.has(element)) {
       return cache.get(element);
     }
-    const style = element.ownerDocument?.defaultView ? element.ownerDocument.defaultView.getComputedStyle(element, pseudo) : undefined;
+    const style = this.domUtilities.getElementComputedStyle(element, pseudo);
     cache.set(element, style);
     return style;
   }
@@ -1008,26 +995,6 @@ class ElementStateInspector {
     }
   }
   
-  /**
-   * Gets a value indicating whether an element is visible as defined in the element's style attributes.
-   * @param element {Element} The element to check.
-   * @param style {CSSStyleDeclaration | undefined} The computed style of the element. If omitted, the computed style is retrieved from the element.
-   * @returns {boolean} True if the element's style visibility is visible; otherwise, false.
-   */
-  private isElementStyleVisibilityVisible(element: Element, style?: CSSStyleDeclaration): boolean {
-    style = style ?? this.getElementComputedStyle(element);
-    if (!style) {
-      return true;
-    }
-    if (!element.checkVisibility()) {
-      return false;
-    }
-    if (style.visibility !== 'visible') {
-      return false;
-    }
-    return true;
-  }
-
   /**
    * Creates an error with an empty stack.
    * @param message {string} The message of the error.

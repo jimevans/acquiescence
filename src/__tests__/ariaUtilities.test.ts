@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import AriaUtilities from '../ariaUtilities';
 import DOMUtilities from '../domUtilities';
-import { testIf, hasShadowDomSupport } from './testUtilities';
+import { testIf, hasShadowDomSupport, isNativeDom } from './testUtilities';
 
 // Polyfill CSS.escape for jsdom if it doesn't exist
 if (typeof CSS === 'undefined' || CSS.escape === undefined) {
@@ -2050,6 +2050,87 @@ describe('AriaUtilities', () => {
       // 6. Returns combobox role
       const role = ariaUtils.isAriaReadOnlyRole(input);
       expect(role).toBe(true); // combobox is a readonly role
+    });
+  });
+
+  describe('getAriaRole', () => {
+    it('should report explicit, implicit, and absent roles', () => {
+      container.innerHTML = '<div role="tab">t</div><nav>n</nav><div>d</div><img alt="" src="data:image/svg,<g></g>">';
+      const [tab, nav, plain, image] = Array.from(container.children);
+      expect(ariaUtils.getAriaRole(tab)).toBe('tab');
+      expect(ariaUtils.getAriaRole(nav)).toBe('navigation');
+      expect(ariaUtils.getAriaRole(plain)).toBeNull();
+      expect(ariaUtils.getAriaRole(image)).toBe('presentation');
+    });
+  });
+
+  describe('getReferencedElements', () => {
+    it('should resolve the IDs in an attribute, in order and each once', () => {
+      container.innerHTML = '<span id="a">A</span><span id="b">B</span><div aria-owns="b missing a b"></div><div></div>';
+      const [a, b, owner, plain] = Array.from(container.children);
+      expect(ariaUtils.getReferencedElements(owner, 'aria-owns')).toEqual([b, a]);
+      expect(ariaUtils.getReferencedElements(plain, 'aria-owns')).toEqual([]);
+    });
+  });
+
+  describe('isIgnoredForAria', () => {
+    it('should ignore style, script, noscript, and template elements', () => {
+      container.innerHTML = '<style></style><script></script><noscript></noscript><template></template><span></span>';
+      expect(Array.from(container.children, (child) => ariaUtils.isIgnoredForAria(child))).toEqual([true, true, true, true, false]);
+    });
+  });
+
+  describe('isHiddenForAria', () => {
+    const element = (html: string): Element => {
+      container.innerHTML = html;
+      return container.firstElementChild!;
+    };
+
+    testIf(isNativeDom(), 'should not hide rendered elements', () => {
+      expect(ariaUtils.isHiddenForAria(element('<button>Visible</button>'))).toBe(false);
+    });
+
+    testIf(isNativeDom(), 'should hide ignored, undisplayed, invisible, and aria-hidden elements and their descendants', () => {
+      expect(ariaUtils.isHiddenForAria(element('<script></script>'))).toBe(true);
+      expect(ariaUtils.isHiddenForAria(element('<span style="display: none">x</span>'))).toBe(true);
+      expect(ariaUtils.isHiddenForAria(element('<span style="visibility: hidden">x</span>'))).toBe(true);
+      expect(ariaUtils.isHiddenForAria(element('<span aria-hidden="TRUE">x</span>'))).toBe(true);
+      expect(ariaUtils.isHiddenForAria(element('<span aria-hidden="false">x</span>'))).toBe(false);
+      expect(ariaUtils.isHiddenForAria(element('<div aria-hidden="true"><span>x</span></div>').firstElementChild!)).toBe(true);
+    });
+
+    testIf(isNativeDom(), 'should hide an element with display contents only when nothing within it is rendered', () => {
+      expect(ariaUtils.isHiddenForAria(element('<div style="display: contents"><span>x</span></div>'))).toBe(false);
+      expect(ariaUtils.isHiddenForAria(element('<div style="display: contents">text</div>'))).toBe(false);
+      expect(ariaUtils.isHiddenForAria(element('<div style="display: contents"><!-- comment --><span hidden>x</span></div>'))).toBe(true);
+    });
+
+    testIf(isNativeDom(), 'should not hide options in a select or slots for their own style', () => {
+      const select = element('<select><option>One</option></select>');
+      expect(ariaUtils.isHiddenForAria(select.firstElementChild!)).toBe(false);
+      expect(ariaUtils.isHiddenForAria(element('<datalist><option>One</option></datalist>').firstElementChild!)).toBe(true);
+      const host = element('<div><span>slotted</span><b>unslotted</b></div>');
+      const shadowRoot = host.attachShadow({ mode: 'open' });
+      shadowRoot.innerHTML = '<slot name="none"></slot><slot></slot>';
+      expect(ariaUtils.isHiddenForAria(shadowRoot.querySelector('slot[name="none"]')!)).toBe(false);
+      expect(ariaUtils.isHiddenForAria(host.querySelector('span')!)).toBe(false);
+    });
+
+    testIf(isNativeDom(), 'should hide children of a shadow host that are not assigned to a slot', () => {
+      const host = element('<div><span>unslotted</span></div>');
+      host.attachShadow({ mode: 'open' }).innerHTML = '<b>shadow</b>';
+      expect(ariaUtils.isHiddenForAria(host.querySelector('span')!)).toBe(true);
+      expect(ariaUtils.isHiddenForAria(host.shadowRoot!.querySelector('b')!)).toBe(false);
+      // A slot is not hidden by its own style, so only its position shows that it is not rendered.
+      const slotHost = element('<div><slot></slot></div>');
+      slotHost.attachShadow({ mode: 'open' }).innerHTML = '<b>shadow</b>';
+      expect(ariaUtils.isHiddenForAria(slotHost.querySelector('slot')!)).toBe(true);
+    });
+
+    it('should hide elements in a document without a window', () => {
+      const detached = document.implementation.createHTMLDocument('');
+      detached.body.innerHTML = '<span>x</span>';
+      expect(ariaUtils.isHiddenForAria(detached.querySelector('span')!)).toBe(true);
     });
   });
 });

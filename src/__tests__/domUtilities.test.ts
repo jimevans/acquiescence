@@ -1041,5 +1041,35 @@ describe('DOMUtilities', () => {
       expect(domUtils.getEnclosingShadowHost(element)).toBe(host);
     });
   });
+
+  describe('Styles', () => {
+    it('should get the computed style of an element, or undefined without a window', () => {
+      const span = document.createElement('span');
+      span.style.display = 'block';
+      container.appendChild(span);
+      expect(domUtils.getElementComputedStyle(span)?.display).toBe('block');
+      const detached = document.implementation.createHTMLDocument('');
+      expect(domUtils.getElementComputedStyle(detached.createElement('span'))).toBeUndefined();
+    });
+
+    it('should treat an element without a computed style as visible', () => {
+      expect(domUtils.isStyleVisibilityVisible(document.createElement('span'), undefined)).toBe(true);
+    });
+
+    testIf(isNativeDom(), 'should tell rendered and visible elements from others', () => {
+      container.innerHTML = '<span>shown</span><span style="visibility: hidden">invisible</span><span style="display: none">undisplayed</span>';
+      const [shown, invisible, undisplayed] = Array.from(container.children);
+      const visible = (element: Element) => domUtils.isStyleVisibilityVisible(element, domUtils.getElementComputedStyle(element));
+      expect(visible(shown)).toBe(true);
+      expect(visible(invisible)).toBe(false);
+      expect(visible(undisplayed)).toBe(false);
+    });
+
+    testIf(isNativeDom(), 'should tell text nodes that take up space from others', () => {
+      container.innerHTML = '<span>text</span><span style="display: none">hidden</span>';
+      expect(domUtils.isVisibleTextNode(container.children[0].firstChild as Text)).toBe(true);
+      expect(domUtils.isVisibleTextNode(container.children[1].firstChild as Text)).toBe(false);
+    });
+  });
 });
 

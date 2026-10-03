@@ -201,6 +201,7 @@ class AriaUtilities {
     ['aria-roledescription', ['generic']],
   ];
 
+  private readonly ignoredTagNames = ['STYLE', 'SCRIPT', 'NOSCRIPT', 'TEMPLATE'];
   private readonly ariaCheckedRoles = ['checkbox', 'menuitemcheckbox', 'option', 'radio', 'switch', 'menuitemradio', 'treeitem'];
   private readonly ariaPressedRoles = ['button'];
   private readonly ariaExpandedRoles = [
@@ -346,20 +347,11 @@ class AriaUtilities {
   }
 
   /**
-   * Reads a true/false/mixed ARIA attribute value; anything but "true" or "mixed" is false.
-   * @param value {string | null} The attribute value.
-   * @returns {boolean | 'mixed'} The state.
-   */
-  private readTriState(value: string | null): boolean | 'mixed' {
-    return value === 'mixed' ? 'mixed' : value === 'true';
-  }
-
-  /**
    * Gets the ARIA role of an element, taking into account the element's explicit and implicit roles.
    * @param element {Element} The element to get the ARIA role of.
    * @returns {AriaRole | null} The ARIA role of the element, or null if the element has no ARIA role.
    */
-  private getAriaRole(element: Element): AriaRole | null {
+  getAriaRole(element: Element): AriaRole | null {
     const explicitRole = this.getExplicitAriaRole(element);
     if (!explicitRole) {
       return this.getImplicitAriaRole(element);
@@ -371,6 +363,70 @@ class AriaUtilities {
       }
     }
     return explicitRole;
+  }
+
+  /**
+   * Gets the elements that an ID reference attribute of an element, such as aria-owns or aria-describedby, refers to.
+   * @param element {Element} The element whose attribute to read.
+   * @param attributeName {string} The name of the attribute, holding a space-separated list of IDs.
+   * @returns {Element[]} The elements found, each once, in the order of the IDs; empty if the attribute is missing.
+   */
+  getReferencedElements(element: Element, attributeName: string): Element[] {
+    return this.getIdRefs(element, element.getAttribute(attributeName));
+  }
+
+  /**
+   * Gets a value indicating whether an element is hidden from the accessibility tree: it is not rendered, it or an
+   * ancestor is aria-hidden or display: none, or it is a child of a shadow host that is not assigned to a slot.
+   * @param element {Element} The element to check.
+   * @returns {boolean} True if the element is hidden from the accessibility tree; otherwise, false.
+   */
+  isHiddenForAria(element: Element): boolean {
+    // https://www.w3.org/TR/wai-aria-1.2/#tree_exclusion
+    // https://www.w3.org/TR/wai-aria-1.2/#aria-hidden
+    if (this.isIgnoredForAria(element)) {
+      return true;
+    }
+    const tagName = this.domUtilities.getNormalizedElementTagName(element);
+    const style = this.domUtilities.getElementComputedStyle(element);
+    if (style?.display === 'contents' && tagName !== 'SLOT') {
+      // An element with display: contents is not rendered itself, but its child nodes are.
+      return !Array.from(element.childNodes).some((child) => {
+        if (child.nodeType === Node.ELEMENT_NODE) {
+          return !this.isHiddenForAria(child as Element);
+        }
+        return child.nodeType === Node.TEXT_NODE && this.domUtilities.isVisibleTextNode(child as Text);
+      });
+    }
+    // The visibility of an option in a select, or of a slot, does not hide it.
+    const isOptionInSelect = tagName === 'OPTION' && !!element.closest('select');
+    if (!isOptionInSelect && tagName !== 'SLOT' && !this.domUtilities.isStyleVisibilityVisible(element, style)) {
+      return true;
+    }
+    for (let current: Element | undefined = element; current; current = this.domUtilities.getParentElementOrShadowHost(current)) {
+      if (this.isExcludedFromAriaTree(current)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Gets a value indicating whether an element is never part of the accessibility tree, whatever its style.
+   * @param element {Element} The element to check.
+   * @returns {boolean} True if the element is a style, script, noscript, or template element; otherwise, false.
+   */
+  isIgnoredForAria(element: Element): boolean {
+    return this.ignoredTagNames.includes(this.domUtilities.getNormalizedElementTagName(element));
+  }
+
+  /**
+   * Reads a true/false/mixed ARIA attribute value; anything but "true" or "mixed" is false.
+   * @param value {string | null} The attribute value.
+   * @returns {boolean | 'mixed'} The state.
+   */
+  private readTriState(value: string | null): boolean | 'mixed' {
+    return value === 'mixed' ? 'mixed' : value === 'true';
   }
 
   /**
@@ -410,6 +466,21 @@ class AriaUtilities {
       ancestor = parent;
     }
     return implicitRole;
+  }
+
+  /**
+   * Gets a value indicating whether an element, by itself and not through its ancestors, removes itself and its
+   * subtree from the accessibility tree.
+   * @param element {Element} The element to check.
+   * @returns {boolean} True if the element is display: none or aria-hidden, has no computed style, or is a child of a
+   * shadow host that is not assigned to a slot; otherwise, false.
+   */
+  private isExcludedFromAriaTree(element: Element): boolean {
+    if (element.parentElement?.shadowRoot && !element.assignedSlot) {
+      return true;
+    }
+    const style = this.domUtilities.getElementComputedStyle(element);
+    return !style || style.display === 'none' || (element.getAttribute('aria-hidden') ?? '').toLowerCase() === 'true';
   }
 
   /**
