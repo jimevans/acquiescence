@@ -137,6 +137,7 @@ pnpm add acquiescence
 - [DOM Snapshots](/guide/dom-snapshots) - Record a document for a trace viewer
 - [Element Descriptions](/guide/element-descriptions) - Describe the element a user acts on
 - [Action Recording](/guide/action-recording) - Record the actions a user takes
+- [Element Picking](/guide/element-picking) - Let a user pick an element with the mouse
 - [API Reference](/api/) - Complete API documentation
 - [Examples](/examples/basic-usage) - See code examples
 

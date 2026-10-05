@@ -14,6 +14,7 @@ Acquiescence provides a TypeScript-first API for querying element states and wai
 - **DomSnapshotGenerator**: Snapshots of a document for a trace viewer
 - **ElementDescriber**: Descriptions of the element a user acts on, by the facts a tool can name it by
 - **ActionRecorder**: Recording of the actions a user takes in a document
+- **ElementPicker**: Letting a user pick an element with the mouse
 
 ## Quick Reference
 
@@ -202,6 +203,7 @@ type Waiter<T> = {
 | `RecordedAction` | An action recorded: `click`, `check`, `uncheck`, `fill`, `press`, `select`, or `setInputFiles` | [Action Recording](/guide/action-recording) |
 | `ModifierKey` | A modifier key held: `'Alt'`, `'Control'`, `'Meta'`, or `'Shift'` | [Action Recording](/guide/action-recording) |
 | `ActionRecorderOptions` | `ignore`, which leaves out events aimed at elements it returns `true` for | [Action Recording](/guide/action-recording) |
+| `ElementPickerOptions` | `resolve`, giving the element picked for the element under the pointer, and `ignore` | [Element Picking](/guide/element-picking) |
 
 ## Method Details
 
@@ -694,6 +696,24 @@ stop(): void
 - `report` is called with each action, as it happens; `options.ignore` leaves out events aimed at elements it returns `true` for.
 - `start()` starts recording a document's actions, stopping any recording already started.
 - `stop()` stops recording.
+
+## Element Picking
+
+The [Element Picking guide](/guide/element-picking) describes the highlight and what the page sees.
+
+### ElementPicker
+
+Lets a user pick an element in a document with the mouse, from the events the browser raises for real input.
+
+```typescript
+constructor(pick: (element: Element) => void, options?: ElementPickerOptions)
+start(document: Document): void
+stop(): void
+```
+
+- `pick` is called with each element the user clicks, which the page does not see; `options.resolve` gives the element highlighted and picked for the element under the pointer, and `options.ignore` leaves out elements it returns `true` for.
+- `start()` starts picking in a document, adding the highlight, and stopping any picking already started.
+- `stop()` stops picking, and removes the highlight.
 
 ## Helper Classes
 

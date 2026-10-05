@@ -28,6 +28,7 @@ Perfect for:
 - **📸 DOM Snapshots** - Record a document, with the state of its inputs, scroll positions, and shadow roots, in the format of the snapshots in Playwright's traces
 - **🏷️ Element Descriptions** - Describe the element a user acts on by the facts a tool can name it by: role, accessible name, labels, attributes, text, and a CSS path
 - **⏺️ Action Recording** - Record the clicks, typing, key presses, choices, and files of a user's real input as actions, for a tool to write down
+- **🎯 Element Picking** - Let a user pick an element with the mouse, highlighting the element under the pointer and keeping the page from seeing the click
 - **🔎 Find Elements by Text, Label, and ARIA State** - Check which elements contain a text, find elements by their labels, match elements against ARIA states such as checked or expanded, and enumerate the open shadow roots to search
 - **🌐 Shadow DOM Support** - Composed tree traversal of open shadow roots; hit testing also works for elements in closed shadow roots
 - **⚡ Performance Optimized** - Smart caching of computed styles and efficient polling strategies for minimal performance impact
@@ -267,6 +268,19 @@ recorder.start(document);
 
 See the [Action Recording guide](https://jimevans.github.io/acquiescence/guide/action-recording).
 
+### Element Picking
+
+Let a user pick an element with the mouse: the element under the pointer is highlighted, and the one clicked is reported without the page seeing the click.
+
+```typescript
+import { ElementPicker } from 'acquiescence';
+
+const picker = new ElementPicker((element) => console.log(element));
+picker.start(document);
+```
+
+See the [Element Picking guide](https://jimevans.github.io/acquiescence/guide/element-picking).
+
 ## Browser Support
 
 Acquiescence can be used in both Node.js environments (with jsdom) and directly in the browser.
@@ -283,7 +297,7 @@ For direct browser usage, a bundled version is available:
 </script>
 ```
 
-Every export is a property of the `Acquiescence` global: `ElementStateInspector`, `AriaSnapshotGenerator`, `AriaSnapshotMatcher`, `DomSnapshotGenerator`, `ElementDescriber`, `ActionRecorder`, `TimeoutWaiter`, and `RequestAnimationFrameWaiter`.
+Every export is a property of the `Acquiescence` global: `ElementStateInspector`, `AriaSnapshotGenerator`, `AriaSnapshotMatcher`, `DomSnapshotGenerator`, `ElementDescriber`, `ActionRecorder`, `ElementPicker`, `TimeoutWaiter`, and `RequestAnimationFrameWaiter`.
 
 ## API Reference
 
@@ -333,6 +347,12 @@ The main class for querying element states and waiting for interactions.
 - `start(document)` - Start recording a document's actions
 - `stop()` - Stop recording
 
+### `ElementPicker`
+
+- `constructor(pick, options?)` - Create a picker that reports each element picked to `pick`; `options.resolve` gives the element highlighted and picked for the element under the pointer, and `options.ignore` leaves out elements it returns true for
+- `start(document)` - Start picking in a document, adding the highlight
+- `stop()` - Stop picking, removing the highlight
+
 ### `TimeoutWaiter` and `RequestAnimationFrameWaiter`
 
 Waiters that poll a condition until it returns a truthy result: `TimeoutWaiter` on a timer, `RequestAnimationFrameWaiter` on every animation frame.
@@ -358,6 +378,7 @@ For more detailed documentation, guides, and examples, visit:
 - [DOM Snapshots Guide](https://jimevans.github.io/acquiescence/guide/dom-snapshots)
 - [Element Descriptions Guide](https://jimevans.github.io/acquiescence/guide/element-descriptions)
 - [Action Recording Guide](https://jimevans.github.io/acquiescence/guide/action-recording)
+- [Element Picking Guide](https://jimevans.github.io/acquiescence/guide/element-picking)
 - [Best Practices](https://jimevans.github.io/acquiescence/guide/best-practices)
 - [API Reference](https://jimevans.github.io/acquiescence/api/)
 

@@ -62,6 +62,10 @@ Describe the element a user acts on by the facts a tool can name it by: role, ac
 
 Record the clicks, typing, key presses, choices, and files of a user's real input as actions. See [Action Recording](/guide/action-recording).
 
+### Element Picking
+
+Let a user pick an element with the mouse: the element under the pointer is highlighted, and the one clicked is reported without the page seeing the click. See [Element Picking](/guide/element-picking).
+
 ## Basic Usage
 
 ### 1. Import the Library

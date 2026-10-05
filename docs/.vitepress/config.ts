@@ -37,7 +37,8 @@ export default defineConfig({
             { text: 'Accessibility Snapshots', link: '/guide/accessibility-snapshots' },
             { text: 'DOM Snapshots', link: '/guide/dom-snapshots' },
             { text: 'Element Descriptions', link: '/guide/element-descriptions' },
-            { text: 'Action Recording', link: '/guide/action-recording' }
+            { text: 'Action Recording', link: '/guide/action-recording' },
+            { text: 'Element Picking', link: '/guide/element-picking' }
           ]
         },
         {
