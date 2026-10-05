@@ -15,6 +15,7 @@ Check various states of DOM elements:
 - **Visibility**: Is the element visible on the page?
 - **Enabled/Disabled**: Can the element be interacted with?
 - **Editable**: Can the element accept text input?
+- **Checked**: Is a checkbox, radio button, or element with a role allowing `aria-checked` checked, unchecked, or indeterminate?
 - **In Viewport**: Is the element currently visible in the viewport?
 - **Stable**: Has the element stopped moving/animating?
 
@@ -36,6 +37,31 @@ Wait for elements to become ready with:
 - Configurable timeouts and polling intervals
 - Precise hit point calculation
 
+### Text, Labels, and ARIA States
+
+Find and check elements as a user would name them:
+
+- Check which elements contain a text
+- Find elements by their labels, and get an element's labels
+- Match elements against ARIA states such as checked, pressed, or expanded
+- Find the open shadow roots to include in a search
+
+### Accessibility Snapshots
+
+Describe a page as assistive technology sees it, in a format compatible with Playwright's aria snapshots, and match it against templates. See [Accessibility Snapshots](/guide/accessibility-snapshots).
+
+### DOM Snapshots
+
+Record a document, with the state of its inputs, scroll positions, and shadow roots, in the format of the snapshots in Playwright's traces. See [DOM Snapshots](/guide/dom-snapshots).
+
+### Element Descriptions
+
+Describe the element a user acts on by the facts a tool can name it by: role, accessible name, labels, attributes, text, and a CSS path. See [Element Descriptions](/guide/element-descriptions).
+
+### Action Recording
+
+Record the clicks, typing, key presses, choices, and files of a user's real input as actions. See [Action Recording](/guide/action-recording).
+
 ## Basic Usage
 
 ### 1. Import the Library
@@ -51,7 +77,7 @@ const inspector = new ElementStateInspector();
 ```
 
 ::: tip
-You can reuse a single `ElementStateInspector` instance throughout your application. The inspector caches computed styles for performance, but caches are short-lived and automatically managed.
+You can reuse a single `ElementStateInspector` instance throughout your application. The inspector caches computed styles for performance. The caches live as long as the inspector, and hold elements weakly, so removed elements can still be garbage collected.
 :::
 
 ### 3. Query Element States
@@ -191,6 +217,9 @@ if (readOnly === true) {
 | `enabled` | Element is not disabled |
 | `disabled` | Element is disabled (via disabled attribute or aria-disabled) |
 | `editable` | Element can accept text input (not disabled or readonly) |
+| `checked` | Checkbox, radio button, or element with a role allowing aria-checked is checked |
+| `unchecked` | Such an element is not checked |
+| `indeterminate` | Such an element is in a mixed state |
 | `inview` | Element is currently visible in the viewport |
 | `notinview` | Element is not in viewport but could be scrolled into view |
 | `unviewable` | Element cannot be scrolled into view (hidden by overflow) |

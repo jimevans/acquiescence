@@ -29,12 +29,15 @@ const result = await inspector.isInteractionReady(button, 'click');
 if (result.status === 'ready') {
   console.log('Element is ready at point:', result.interactionPoint);
   // result.interactionPoint: { x: number, y: number }
+  // result.interactionOffset: the same point, as an offset from the element's in-view center
 } else if (result.status === 'needsscroll') {
-  console.log('Element needs to be scrolled into view');
+  console.log('Element is out of view, but can be scrolled into view');
 } else {
-  console.log('Element is not ready for interaction');
+  console.log('Element is not ready for interaction:', result.reason);
 }
 ```
+
+`isInteractionReady()` does not throw. When the element is not ready, `result.reason` says why; see [Reasons an Element Is Not Ready](#reasons-an-element-is-not-ready).
 
 #### Required States by Interaction Type
 
@@ -65,7 +68,7 @@ Different interactions require different element states:
 
 ### Hit Point Calculation
 
-When an element is ready, `isInteractionReady()` returns the precise point where the interaction should occur:
+When an element is ready, `isInteractionReady()` returns the precise point where the interaction should occur, in viewport coordinates, as `interactionPoint`. It also returns the point as `interactionOffset`, an offset from the element's in-view center point, which is where a WebDriver element origin places the pointer:
 
 ```typescript
 const result = await inspector.isInteractionReady(button, 'click');
@@ -100,21 +103,18 @@ const result = await inspector.isInteractionReady(
 `isInteractionReady()` performs hit testing to ensure the target element isn't obscured by another element:
 
 ```typescript
-try {
-  const result = await inspector.isInteractionReady(button, 'click');
-  
-  if (result.status === 'ready') {
-    console.log('Clear path to element');
-  }
-} catch (error) {
-  // Error thrown if element is obscured
-  console.error(error.message);
-  // Example: "<div class='modal'> from <dialog> subtree"
+const result = await inspector.isInteractionReady(button, 'click');
+
+if (result.status === 'ready') {
+  console.log('Clear path to element');
+} else if (result.reason?.startsWith('obscured by')) {
+  console.error(result.reason);
+  // Example: "obscured by <div class='modal'> from <dialog> subtree"
 }
 ```
 
 ::: info Shadow DOM Support
-Hit testing works correctly with Shadow DOM, including closed shadow roots. The algorithm traverses the composed tree to accurately determine if the target is accessible.
+Hit testing works with Shadow DOM, including closed shadow roots, because it walks up from the target element through its shadow roots to the document. The algorithm traverses the composed tree to accurately determine if the target is accessible.
 :::
 
 ## Waiting for Interaction Readiness
@@ -263,26 +263,28 @@ async function getValidatedInteractionPoint(element: Element) {
 
 ## Error Handling
 
-### Possible Errors
+### Reasons an Element Is Not Ready
 
-When using interaction methods, you may encounter these errors:
+`isInteractionReady()` reports why an element is not ready as `result.reason`, with `status: 'notready'`:
 
-**"element not connected"**
-- The element was removed from the DOM
+| Reason | Meaning |
+|--------|---------|
+| `'notconnected'` | The element was removed from the DOM |
+| `'stable'` | The element is still moving |
+| `'hidden'` | The element is not visible |
+| `'unviewable'` | The element is hidden by overflow on an ancestor and cannot be scrolled into view |
+| `'disabled'` | The element is disabled |
+| `'readOnly'` | The element is read-only (`type` and `clear`) |
+| `'noteditable'` | The element cannot be edited at all (`type` and `clear`) |
+| `'element is not in view port'` | The element is not in the viewport when its hit point is computed |
+| `'element is not visible (width: …, height: …)'` | The element's rectangle in the viewport has zero width or height |
+| `'obscured by <element>'` or `'obscured by <element> from <ancestor> subtree'` | Another element would receive the interaction |
 
-**"element is not in view port, and cannot be scrolled into view due to overflow"**
-- The element is hidden by `overflow: hidden` on an ancestor
-
-**"element is not visible"**
-- The element has zero width or height
-
-**"`<element>` from `<ancestor>` subtree"**
-- The target element is obscured by another element
-
-**"timeout waiting for interaction to be ready"**
-- The element didn't become ready within the specified timeout
+An element that is out of view but can be scrolled into view has `status: 'needsscroll'`, not a reason.
 
 ### Handling Errors
+
+`waitForInteractionReady()` keeps polling while the element is not ready for any of these reasons, including when it is not connected. It throws only when the timeout is reached, with the message `'timeout waiting for interaction to be ready'`. To find out why, check the element afterward:
 
 ```typescript
 try {
@@ -294,14 +296,13 @@ try {
   
   // Perform interaction
 } catch (error) {
-  if (error.message.includes('not connected')) {
+  const result = await inspector.isInteractionReady(element, 'click');
+  if (result.reason === 'notconnected') {
     console.error('Element was removed from DOM');
-  } else if (error.message.includes('timeout')) {
-    console.error('Element did not become ready in time');
-  } else if (error.message.includes('overflow')) {
+  } else if (result.reason === 'unviewable') {
     console.error('Element cannot be scrolled into view');
   } else {
-    console.error('Unexpected error:', error.message);
+    console.error('Element did not become ready in time:', result.reason ?? result.status);
   }
 }
 ```

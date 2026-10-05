@@ -428,14 +428,12 @@ async function ensureInteractionReady(
     }
     
     // Check if element is obscured
-    try {
-      const result = await inspector.isInteractionReady(element, interactionType);
-      
-      if (result.status === 'notready') {
-        console.log('Element state changed, waiting again...');
-      }
-    } catch (checkError) {
-      console.log('Element may be obscured:', checkError.message);
+    const result = await inspector.isInteractionReady(element, interactionType);
+
+    if (result.reason?.startsWith('obscured by')) {
+      console.log('Element is obscured:', result.reason);
+    } else if (result.status === 'notready') {
+      console.log('Element is not ready, waiting again:', result.reason);
     }
     
     // Final attempt with longer timeout

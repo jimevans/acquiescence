@@ -63,7 +63,7 @@ describe('ElementDescriber', () => {
   describe('facts', () => {
     testIf(isNativeDom(), 'should give the attributes an element can be named by', () => {
       container.innerHTML = `
-        <input id="email" placeholder="you@example.com" title="Email address" data-testid="email-field">
+        <input id="email" name="email" type="email" placeholder="you@example.com" title="Email address" data-testid="email-field">
         <img id="logo" alt="Company logo" src="data:,">
         <span>No attributes</span>`;
 
@@ -71,8 +71,8 @@ describe('ElementDescriber', () => {
       const logo = describer.describe(element('#logo')).target;
       const plain = describer.describe(element('span')).target;
 
-      expect(email).toMatchObject({ tagName: 'input', placeholder: 'you@example.com', title: 'Email address', testId: 'email-field', id: 'email', alt: null });
-      expect(logo).toMatchObject({ tagName: 'img', alt: 'Company logo', placeholder: null, title: null, testId: null });
+      expect(email).toMatchObject({ tagName: 'input', nameAttribute: 'email', type: 'email', placeholder: 'you@example.com', title: 'Email address', testId: 'email-field', id: 'email', alt: null });
+      expect(logo).toMatchObject({ tagName: 'img', alt: 'Company logo', nameAttribute: null, type: null, placeholder: null, title: null, testId: null });
       expect(plain).toMatchObject({ id: null, testId: null, role: null });
     });
 

@@ -4,7 +4,7 @@ layout: home
 hero:
   name: Acquiescence
   text: Element State Querying & Waiting
-  tagline: A powerful TypeScript library for querying and waiting for element states in the browser
+  tagline: A TypeScript library for querying and waiting for element states in the browser, with accessibility snapshots, DOM snapshots, element descriptions, and action recording
   actions:
     - theme: brand
       text: Get Started
@@ -37,9 +37,25 @@ features:
     title: Accessibility Snapshots
     details: Describe a page as assistive technology sees it, in a format compatible with Playwright's aria snapshots, with refs to act on and templates to match.
 
+  - icon: 📸
+    title: DOM Snapshots
+    details: Record a document, with the state of its inputs, scroll positions, and shadow roots, in the format of the snapshots in Playwright's traces.
+
+  - icon: 🏷️
+    title: Element Descriptions
+    details: Describe the element a user acts on by the facts a tool can name it by - role, accessible name, labels, attributes, text, and a CSS path.
+
+  - icon: ⏺️
+    title: Action Recording
+    details: Record the clicks, typing, key presses, choices, and files of a user's real input as actions, for a tool to write down.
+
+  - icon: 🔎
+    title: Find Elements by Text, Label, and ARIA State
+    details: Check which elements contain a text, find elements by their labels, match elements against ARIA states, and enumerate the open shadow roots to search.
+
   - icon: 🌐
     title: Shadow DOM Support
-    details: Full support for Shadow DOM, including closed shadow roots and composed tree traversal.
+    details: Composed tree traversal of open shadow roots; hit testing also works for elements in closed shadow roots.
   
   - icon: ⚡
     title: Performance Optimized
@@ -117,6 +133,10 @@ pnpm add acquiescence
 
 - [Getting Started Guide](/guide/getting-started) - Learn the basics
 - [Element States](/guide/element-states) - Understand all available states
+- [Accessibility Snapshots](/guide/accessibility-snapshots) - Describe a page as assistive technology sees it
+- [DOM Snapshots](/guide/dom-snapshots) - Record a document for a trace viewer
+- [Element Descriptions](/guide/element-descriptions) - Describe the element a user acts on
+- [Action Recording](/guide/action-recording) - Record the actions a user takes
 - [API Reference](/api/) - Complete API documentation
 - [Examples](/examples/basic-usage) - See code examples
 

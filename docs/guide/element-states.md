@@ -86,8 +86,23 @@ const result = await inspector.queryElementState(input, 'editable');
 ```
 
 ::: warning
-If you query `editable` on an element that cannot be editable (like a `<div>` without `contenteditable`), the method will throw an error.
+If you query `editable` on an element that cannot be editable (like a `<div>` without `contenteditable`), the state does not match: `queryElementState()` returns `{ matches: false, received: 'error:noteditable' }`, and `queryElementStates()` returns `{ status: 'error', message: 'noteditable' }`.
 :::
+
+### Checked States
+
+#### `checked`, `unchecked`, and `indeterminate`
+
+The element is checked, not checked, or in a mixed state. These states apply to checkboxes, radio buttons, and elements with a role allowing `aria-checked`, such as `checkbox`, `radio`, `switch`, or `menuitemcheckbox`. A native checkbox is `indeterminate` when its `indeterminate` property is set; an element with a role is `indeterminate` when `aria-checked="mixed"`.
+
+```typescript
+const result = await inspector.queryElementState(checkbox, 'checked');
+// result.matches: true if checked
+// result.received: 'checked', 'unchecked', or 'indeterminate'
+// result.isRadio: true for a radio button, which clicking cannot uncheck
+```
+
+For any other element, the state does not match: `received` is `'error:notcheckable'`, and `queryElementStates()` returns `{ status: 'error', message: 'notcheckable' }`.
 
 ### Viewport States
 
@@ -233,6 +248,48 @@ Checks if an element can be scrolled into view.
 if (!inspector.isElementScrollable(element)) {
   console.log('Element is hidden by overflow: hidden');
 }
+```
+
+### `elementsContainText(elements: Element[], text: string): boolean[]`
+
+Checks, for each element, whether its rendered text contains a string, ignoring case and treating each run of whitespace as one space.
+
+```typescript
+const items = Array.from(document.querySelectorAll('li'));
+const matches = inspector.elementsContainText(items, 'In stock');
+const inStock = items.filter((_, index) => matches[index]);
+```
+
+### `elementsMatchAriaStates(elements: Element[], states: AriaStates): boolean[]`
+
+Checks, for each element, whether it has every given ARIA state: `checked`, `pressed`, `expanded`, `selected`, `level`, or `disabled`. A state that does not apply to an element does not match.
+
+```typescript
+const [expanded] = inspector.elementsMatchAriaStates([menuButton], { expanded: true });
+```
+
+### `findElementsByLabel(scopes, text: string, exact: boolean): Element[]`
+
+Finds the elements within some documents or elements whose labels match a text. An element's labels are the elements its `aria-labelledby` refers to; failing that, its `aria-label`; failing that, the `label` elements of a form control. Without `exact`, a label matches if it contains the text, ignoring case.
+
+```typescript
+const [email] = inspector.findElementsByLabel([document], 'Email address', false);
+```
+
+### `getElementLabels(element: Element): string[]`
+
+Gets the texts of an element's labels, as `findElementsByLabel()` matches them.
+
+```typescript
+console.log(inspector.getElementLabels(input)); // ['Email address']
+```
+
+### `findOpenShadowRoots(scopes): ShadowRoot[]`
+
+Finds the open shadow roots within some documents, elements, or shadow roots, including nested ones, so that a search can include them. Closed shadow roots cannot be found.
+
+```typescript
+const scopes = [document, ...inspector.findOpenShadowRoots([document])];
 ```
 
 ## Next Steps

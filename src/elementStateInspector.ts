@@ -161,14 +161,17 @@ class ElementStateInspector {
    * @param element {Element} The element to check.
    * @param interactionType {ElementInteractionType} The type of interaction to check.
    * @param hitPointOffset {?{x: number, y: number}} The offset of the hit point from the center of the element.
-   * @returns {Promise<{ status: ElementInteractionReadyResult, interactionPoint?: { x: number, y: number } }>}
+   * @returns {Promise<ElementInteractionReadiness>}
    * A Promise that resolves to an object with the status of the check.
-   * - 'status' is the status of the check.
+   * - 'status' is the status of the check: 'ready', 'needsscroll' or 'notready'.
    * - 'interactionPoint' is the hit point of the interaction, if the element is ready for the interaction.
-   * - 'needsscroll' if the element is not in the view port, and cannot be scrolled into view due to overflow.
+   * - 'interactionOffset' is the offset of the hit point from the element's in-view center point, if the element is
+   * ready for the interaction.
+   * - 'needsscroll' if the element is not in the view port, but can be scrolled into view.
    * - 'notready' if the element is not ready for the interaction, with a 'reason': the state seen (such as 'hidden',
-   * 'disabled', 'readOnly', 'stable' or 'unviewable'), 'notconnected', 'noteditable' for typing into an element that
-   * cannot be edited, or 'obscured by' and a preview of the element hit instead.
+   * 'disabled', 'readOnly', 'stable', or 'unviewable' for an element hidden by overflow), 'notconnected',
+   * 'noteditable' for typing into an element that cannot be edited, 'element is not in view port', 'element is not
+   * visible' with its size, or 'obscured by' and a preview of the element hit instead.
    */
   async isInteractionReady(element: Element, interactionType: ElementInteractionType, hitPointOffset?: { x: number, y: number }): Promise<ElementInteractionReadiness> {
     const states: ElementState[] = ['stable', 'visible', 'inview'];

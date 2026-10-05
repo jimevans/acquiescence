@@ -27,7 +27,9 @@ Perfect for:
 - **♿ Accessibility Snapshots** - Describe a page as assistive technology sees it, in a format compatible with Playwright's aria snapshots, with refs to act on and templates to match
 - **📸 DOM Snapshots** - Record a document, with the state of its inputs, scroll positions, and shadow roots, in the format of the snapshots in Playwright's traces
 - **🏷️ Element Descriptions** - Describe the element a user acts on by the facts a tool can name it by: role, accessible name, labels, attributes, text, and a CSS path
-- **🌐 Shadow DOM Support** - Full support for Shadow DOM, including closed shadow roots and composed tree traversal
+- **⏺️ Action Recording** - Record the clicks, typing, key presses, choices, and files of a user's real input as actions, for a tool to write down
+- **🔎 Find Elements by Text, Label, and ARIA State** - Check which elements contain a text, find elements by their labels, match elements against ARIA states such as checked or expanded, and enumerate the open shadow roots to search
+- **🌐 Shadow DOM Support** - Composed tree traversal of open shadow roots; hit testing also works for elements in closed shadow roots
 - **⚡ Performance Optimized** - Smart caching of computed styles and efficient polling strategies for minimal performance impact
 
 ## Installation
@@ -125,6 +127,8 @@ const result = await inspector.isInteractionReady(button, 'click');
 
 if (result.status === 'ready') {
   console.log('Ready to click at:', result.interactionPoint);
+  // The same point, as an offset from the element's in-view center
+  console.log('Offset from center:', result.interactionOffset);
 } else if (result.status === 'needsscroll') {
   console.log('Element needs to be scrolled into view');
 } else {
@@ -157,11 +161,12 @@ try {
 ### Supported Interaction Types
 
 - `click` - Single click
-- `dblclick` - Double click
+- `doubleclick` - Double click
 - `hover` - Mouse hover
+- `drag` - Drag operation
+- `drop` - Drop operation
 - `type` - Text input
 - `clear` - Clear input field
-- `drag` - Drag operation
 - `screenshot` - Screenshot capture
 
 ### Helper Methods
@@ -238,7 +243,7 @@ See the [DOM Snapshots guide](https://jimevans.github.io/acquiescence/guide/dom-
 
 ### Element Descriptions
 
-Describe the element a user acts on, such as for writing a locator for it: its role, accessible name, labels, attributes, text, and a CSS path, and the same for its nameable ancestors.
+Describe the element a user acts on, such as for writing a locator for it: its role, accessible name, labels, attributes (including `name` and `type`), text, and a CSS path, and the same for its nameable ancestors.
 
 ```typescript
 import { ElementDescriber } from 'acquiescence';
@@ -248,6 +253,19 @@ console.log(description.target.role, description.target.name, description.target
 ```
 
 See the [Element Descriptions guide](https://jimevans.github.io/acquiescence/guide/element-descriptions).
+
+### Action Recording
+
+Record the actions a user takes in a document from the browser's events for real input: clicks, checkboxes checked, text entered, keys pressed, options selected, and files chosen.
+
+```typescript
+import { ActionRecorder } from 'acquiescence';
+
+const recorder = new ActionRecorder((action) => console.log(action.kind, action.element));
+recorder.start(document);
+```
+
+See the [Action Recording guide](https://jimevans.github.io/acquiescence/guide/action-recording).
 
 ## Browser Support
 
@@ -265,6 +283,8 @@ For direct browser usage, a bundled version is available:
 </script>
 ```
 
+Every export is a property of the `Acquiescence` global: `ElementStateInspector`, `AriaSnapshotGenerator`, `AriaSnapshotMatcher`, `DomSnapshotGenerator`, `ElementDescriber`, `ActionRecorder`, `TimeoutWaiter`, and `RequestAnimationFrameWaiter`.
+
 ## API Reference
 
 ### `ElementStateInspector`
@@ -275,11 +295,20 @@ The main class for querying element states and waiting for interactions.
 
 - `queryElementState(element, state)` - Check a single element state
 - `queryElementStates(element, states)` - Check multiple element states
-- `isInteractionReady(element, interactionType)` - Check if element is ready for interaction
-- `waitForInteractionReady(element, interactionType, timeout)` - Wait for element to be ready
+- `isInteractionReady(element, interactionType, hitPointOffset?)` - Check if element is ready for interaction
+- `waitForInteractionReady(element, interactionType, timeoutInMilliseconds, hitPointOffset?)` - Wait for element to be ready
 - `isElementVisible(element)` - Helper to check visibility
 - `isElementDisabled(element)` - Helper to check disabled state
 - `isElementReadOnly(element)` - Helper to check read-only state
+- `getElementInViewPortRect(element)` - Get the element's bounding rectangle in the viewport, or `undefined` if it is not in the viewport
+- `isElementInViewPort(element)` - Check if the element is in the viewport
+- `isElementScrollable(element)` - Check if the element can be scrolled into view
+- `getElementClickPoint(element, offset?)` - Get a click point of the element, or an error message if it is not in the viewport or is obscured
+- `elementsContainText(elements, text)` - Check, for each element, whether its rendered text contains a string
+- `findOpenShadowRoots(scopes)` - Find the open shadow roots within some scopes, including nested ones
+- `elementsMatchAriaStates(elements, states)` - Check, for each element, whether it has every given ARIA state
+- `findElementsByLabel(scopes, text, exact)` - Find the elements within some scopes whose labels match a text
+- `getElementLabels(element)` - Get the texts of an element's labels
 
 ### `AriaSnapshotGenerator`
 
@@ -298,7 +327,22 @@ The main class for querying element states and waiting for interactions.
 - `describe(element, options?)` - Describe the element a user acting on an element acts on, and its nameable ancestors
 - `getActionTarget(element)` - Get the element a user acting on an element acts on
 
-For complete API documentation, see the [full API reference](https://yourusername.github.io/element-state/api/).
+### `ActionRecorder`
+
+- `constructor(report, options?)` - Create a recorder that reports each action to `report`; `options.ignore` leaves out events aimed at elements it returns true for
+- `start(document)` - Start recording a document's actions
+- `stop()` - Stop recording
+
+### `TimeoutWaiter` and `RequestAnimationFrameWaiter`
+
+Waiters that poll a condition until it returns a truthy result: `TimeoutWaiter` on a timer, `RequestAnimationFrameWaiter` on every animation frame.
+
+- `new TimeoutWaiter(condition, timeoutInMilliseconds = 0, pollIntervalsInMilliseconds = [100])` - Create a waiter; checks after the first are spaced by the intervals in turn, and the last interval repeats
+- `new RequestAnimationFrameWaiter(condition, timeoutInMilliseconds = 0)` - Create a waiter
+- `waitForCondition()` - Resolve with the first truthy result of the condition; reject with `Timeout after Nms` when the timeout passes, or `Wait cancelled` when cancelled. An exception from the condition is ignored, and the condition is checked again. A timeout of 0 checks the condition once.
+- `cancel()` - Cancel the wait
+
+For complete API documentation, see the [full API reference](https://jimevans.github.io/acquiescence/api/).
 
 ## Documentation
 
@@ -309,7 +353,11 @@ For more detailed documentation, guides, and examples, visit:
 - [Getting Started Guide](https://jimevans.github.io/acquiescence/guide/getting-started)
 - [Element States Guide](https://jimevans.github.io/acquiescence/guide/element-states)
 - [Interaction Types Guide](https://jimevans.github.io/acquiescence/guide/interactions)
+- [Stability Detection Guide](https://jimevans.github.io/acquiescence/guide/stability)
 - [Accessibility Snapshots Guide](https://jimevans.github.io/acquiescence/guide/accessibility-snapshots)
+- [DOM Snapshots Guide](https://jimevans.github.io/acquiescence/guide/dom-snapshots)
+- [Element Descriptions Guide](https://jimevans.github.io/acquiescence/guide/element-descriptions)
+- [Action Recording Guide](https://jimevans.github.io/acquiescence/guide/action-recording)
 - [Best Practices](https://jimevans.github.io/acquiescence/guide/best-practices)
 - [API Reference](https://jimevans.github.io/acquiescence/api/)
 
@@ -320,7 +368,7 @@ For more detailed documentation, guides, and examples, visit:
 ```bash
 # Clone the repository
 git clone https://github.com/jimevans/acquiescence.git
-cd element-state
+cd acquiescence
 
 # Install dependencies
 npm install

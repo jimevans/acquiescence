@@ -1,7 +1,19 @@
 {
   "name": "acquiescence",
   "version": "0.1.15",
-  "description": "Library for querying and waiting for element states",
+  "description": "Library for querying and waiting for element states, taking and matching accessibility snapshots, taking DOM snapshots, describing elements, and recording user actions",
+  "keywords": [
+    "accessibility",
+    "aria",
+    "aria-snapshot",
+    "accessible-name",
+    "dom-snapshot",
+    "element-state",
+    "automation",
+    "testing",
+    "playwright",
+    "webdriver"
+  ],
   "author": "Jim Evans",
   "license": "Apache-2.0",
   "repository": {

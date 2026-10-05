@@ -363,33 +363,75 @@ async function robustStateCheck(element: Element) {
 
 ### Example 14: Validate Editable State Safely
 
+Querying `editable` on an element that cannot be edited does not throw: `received` is `'error:noteditable'`. This includes elements that are not `<input>`, `<textarea>`, `<select>`, or editable, unless their role allows `aria-readonly`, such as `textbox` or `combobox`.
+
 ```typescript
 async function safeEditableCheck(element: Element) {
-  const tagName = element.tagName.toLowerCase();
-  const isContentEditable = element.hasAttribute('contenteditable');
-  
-  // Only check editable for appropriate elements
-  if (!['input', 'textarea', 'select'].includes(tagName) && !isContentEditable) {
+  const result = await inspector.queryElementState(element, 'editable');
+
+  if (result.received === 'error:noteditable') {
     return {
       editable: false,
       reason: 'Element type does not support editable state'
     };
   }
-  
-  try {
-    const result = await inspector.queryElementState(element, 'editable');
-    return {
-      editable: result.matches,
-      state: result.received
-    };
-  } catch (error) {
-    return {
-      editable: false,
-      reason: 'Error checking editable state',
-      error
-    };
-  }
+
+  return {
+    editable: result.matches,
+    state: result.received // 'editable', 'disabled', 'readOnly', or 'error:notconnected'
+  };
 }
+```
+
+## Checked States
+
+### Example 15: Check a Checkbox or Radio Button
+
+```typescript
+async function getCheckedState(element: Element) {
+  const result = await inspector.queryElementState(element, 'checked');
+
+  if (result.received === 'error:notcheckable') {
+    return { checkable: false };
+  }
+
+  return {
+    checkable: true,
+    checked: result.matches,
+    state: result.received, // 'checked', 'unchecked', or 'indeterminate'
+    isRadio: result.isRadio // A radio button cannot be unchecked by clicking it
+  };
+}
+
+const selectAll = document.querySelector('#select-all');
+const { state } = await getCheckedState(selectAll);
+if (state === 'indeterminate') {
+  console.log('Some, but not all, items are selected');
+}
+```
+
+## Text, Label, and ARIA State Lookups
+
+### Example 16: Find Elements by Text, Label, and ARIA State
+
+```typescript
+// Elements whose text contains a string, ignoring case
+const rows = Array.from(document.querySelectorAll('tr'));
+const containsText = inspector.elementsContainText(rows, 'overdue');
+const overdueRows = rows.filter((_, index) => containsText[index]);
+
+// Elements by label: aria-labelledby, aria-label, or label elements
+const [emailInput] = inspector.findElementsByLabel([document], 'Email', false);
+console.log(inspector.getElementLabels(emailInput)); // ['Email']
+
+// Elements with ARIA states
+const tabs = Array.from(document.querySelectorAll('[role="tab"]'));
+const selected = inspector.elementsMatchAriaStates(tabs, { selected: true });
+const selectedTab = tabs.find((_, index) => selected[index]);
+
+// Include open shadow roots in a search
+const scopes = [document, ...inspector.findOpenShadowRoots([document])];
+const buttons = scopes.flatMap((scope) => Array.from(scope.querySelectorAll('button')));
 ```
 
 ## Next Steps

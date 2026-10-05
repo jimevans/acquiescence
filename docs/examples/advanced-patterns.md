@@ -393,21 +393,18 @@ async function waitWithProgress(
   while (Date.now() - start < timeout) {
     const elapsed = Date.now() - start;
     
-    try {
-      const result = await inspector.isInteractionReady(element, interactionType);
-      
-      if (result.status === 'ready') {
-        onProgress(elapsed, 'ready');
-        return result.interactionPoint;
-      }
-      
-      onProgress(elapsed, result.status);
-      
-      if (result.status === 'needsscroll') {
-        element.scrollIntoView({ behavior: 'instant', block: 'center' });
-      }
-    } catch (error) {
-      onProgress(elapsed, `error: ${error.message}`);
+    const result = await inspector.isInteractionReady(element, interactionType);
+
+    if (result.status === 'ready') {
+      onProgress(elapsed, 'ready');
+      return result.interactionPoint;
+    }
+
+    // For 'notready', the reason, such as 'disabled' or 'obscured by <div class="overlay">'
+    onProgress(elapsed, result.reason ?? result.status);
+
+    if (result.status === 'needsscroll') {
+      element.scrollIntoView({ behavior: 'instant', block: 'center' });
     }
     
     await new Promise(resolve => setTimeout(resolve, pollInterval));

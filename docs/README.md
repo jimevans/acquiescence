@@ -14,13 +14,18 @@ docs/
 │   ├── element-states.md
 │   ├── interactions.md
 │   ├── stability.md
+│   ├── accessibility-snapshots.md
+│   ├── dom-snapshots.md
+│   ├── element-descriptions.md
+│   ├── action-recording.md
 │   ├── best-practices.md
 │   └── troubleshooting.md
 ├── examples/           # Code examples
 │   ├── basic-usage.md
 │   ├── checking-states.md
 │   ├── waiting-interactions.md
-│   └── advanced-patterns.md
+│   ├── advanced-patterns.md
+│   └── accessibility-snapshots.md
 ├── api/                # API reference (manual overview)
 │   └── index.md        # API overview
 ├── public/             # Static files (copied as-is)

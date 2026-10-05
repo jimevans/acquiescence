@@ -46,17 +46,23 @@ document.querySelector('.my-button-class');
 // Element might be inside shadow root
 const host = document.querySelector('my-component');
 const button = host?.shadowRoot?.querySelector('#my-button');
+
+// Or search every open shadow root
+const scopes = [document, ...inspector.findOpenShadowRoots([document])];
+const found = scopes.map((scope) => scope.querySelector('#my-button')).find((element) => element);
 ```
 
-### Element Not Connected Error
+### Element Not Connected
 
-**Problem:** Error message: "element not connected"
+**Problem:** A state query returns `{ status: 'error', message: 'notconnected' }`, or `isInteractionReady()` returns `{ status: 'notready', reason: 'notconnected' }`.
 
 **Symptoms:**
 ```typescript
-// Error: element not connected
 const result = await inspector.queryElementStates(button, ['visible']);
+// { status: 'error', message: 'notconnected' }
 ```
+
+`waitForInteractionReady()` does not report this: it polls a disconnected element until the timeout, and throws the timeout error.
 
 **Cause:** The element was removed from the DOM between selection and state check.
 
@@ -77,16 +83,16 @@ await inspector.waitForInteractionReady(getButton(), 'click', 5000);
 ```typescript
 async function clickWithRetry(selector: string) {
   for (let i = 0; i < 3; i++) {
+    const element = document.querySelector<HTMLElement>(selector);
+    if (!element) throw new Error('Element not found');
+
     try {
-      const element = document.querySelector(selector);
-      if (!element) throw new Error('Element not found');
-      
       await inspector.waitForInteractionReady(element, 'click', 5000);
       element.click();
       return;
     } catch (error) {
-      if (error.message.includes('not connected') && i < 2) {
-        await new Promise(resolve => setTimeout(resolve, 500));
+      // The element was replaced while waiting; try again with the new one
+      if (!element.isConnected && i < 2) {
         continue;
       }
       throw error;
@@ -189,12 +195,15 @@ await inspector.waitForInteractionReady(element, 'click', 10000);
 
 ### Element Obscured by Another Element
 
-**Problem:** Error mentioning an element is obscured by another element.
+**Problem:** The element is reported as obscured by another element.
 
 **Symptoms:**
 ```typescript
-// Error: <div class="overlay"> from <dialog> subtree
-await inspector.getElementClickPoint(button);
+const clickPoint = await inspector.getElementClickPoint(button);
+// { status: 'error', message: 'obscured by <div class="overlay"> from <dialog> subtree' }
+
+const result = await inspector.isInteractionReady(button, 'click');
+// { status: 'notready', reason: 'obscured by <div class="overlay"> from <dialog> subtree' }
 ```
 
 **Cause:** Another element is covering the target element at its center point.
@@ -243,7 +252,7 @@ await inspector.waitForInteractionReady(button, 'click', 5000);
 
 ### Element Hidden by Overflow
 
-**Problem:** Error message: "element is not in view port, and cannot be scrolled into view due to overflow"
+**Problem:** The `inview` state reports `received: 'unviewable'`, or `isInteractionReady()` returns `{ status: 'notready', reason: 'unviewable' }`.
 
 **Cause:** Element is hidden by an ancestor with `overflow: hidden`.
 
@@ -279,11 +288,11 @@ element.click();
 parent.style.overflow = originalOverflow;
 ```
 
-### Editable State Error
+### Element Not Editable
 
-**Problem:** Error: "Element is not an `<input>`, `<textarea>`, `<select>` or [contenteditable]..."
+**Problem:** The `editable` state reports `received: 'error:noteditable'`, `queryElementStates()` returns `{ status: 'error', message: 'noteditable' }`, or `isInteractionReady()` with `type` or `clear` returns `{ status: 'notready', reason: 'noteditable' }`.
 
-**Cause:** Trying to check `editable` state on a non-input element.
+**Cause:** The element is not an `<input>`, `<textarea>`, `<select>`, or editable element, and has no role allowing `aria-readonly`.
 
 **Solutions:**
 
@@ -291,11 +300,11 @@ parent.style.overflow = originalOverflow;
 ```typescript
 // Verify element type
 console.log('Tag name:', element.tagName);
-console.log('Is contenteditable:', element.hasAttribute('contenteditable'));
+console.log('Is contenteditable:', (element as HTMLElement).isContentEditable);
+console.log('Role:', element.getAttribute('role'));
 
-// Only check editable for appropriate elements
-if (['INPUT', 'TEXTAREA', 'SELECT'].includes(element.tagName) ||
-    element.hasAttribute('contenteditable')) {
+// isElementReadOnly returns 'error' for an element that cannot be edited
+if (inspector.isElementReadOnly(element) !== 'error') {
   await inspector.queryElementState(element, 'editable');
 }
 ```
@@ -462,11 +471,10 @@ async function fullDiagnostic(element: Element) {
   console.log('In Viewport:', inView);
   
   console.log('\n=== Interaction Check ===');
-  try {
-    const result = await inspector.isInteractionReady(element, 'click');
-    console.log('Interaction Ready:', result);
-  } catch (error) {
-    console.log('Interaction Error:', error.message);
+  const result = await inspector.isInteractionReady(element, 'click');
+  console.log('Interaction Ready:', result.status);
+  if (result.reason) {
+    console.log('Reason:', result.reason);
   }
 }
 ```

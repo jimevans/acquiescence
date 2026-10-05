@@ -3,7 +3,7 @@ import { defineConfig } from 'vitepress';
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
   title: 'Acquiescence',
-  description: 'Library for querying and waiting for element states',
+  description: 'Library for querying and waiting for element states, taking and matching accessibility snapshots, taking DOM snapshots, describing elements, and recording user actions',
   base: '/acquiescence/',
   ignoreDeadLinks: [
     // Ignore links to TypeDoc generated documentation
@@ -36,7 +36,8 @@ export default defineConfig({
             { text: 'Stability Detection', link: '/guide/stability' },
             { text: 'Accessibility Snapshots', link: '/guide/accessibility-snapshots' },
             { text: 'DOM Snapshots', link: '/guide/dom-snapshots' },
-            { text: 'Element Descriptions', link: '/guide/element-descriptions' }
+            { text: 'Element Descriptions', link: '/guide/element-descriptions' },
+            { text: 'Action Recording', link: '/guide/action-recording' }
           ]
         },
         {

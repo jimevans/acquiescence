@@ -343,7 +343,7 @@ async function submitForm() {
 
 ### 1. Not Checking Element Connection
 
-Always verify elements are still in the DOM:
+Always verify elements are still in the DOM. `waitForInteractionReady()` polls a removed element until the timeout, so check the element when the wait fails:
 
 ```typescript
 const element = document.querySelector('#my-element');
@@ -353,7 +353,7 @@ const element = document.querySelector('#my-element');
 try {
   await inspector.waitForInteractionReady(element, 'click', 5000);
 } catch (error) {
-  if (error.message.includes('not connected')) {
+  if (!element.isConnected) {
     console.error('Element was removed from DOM');
   }
 }
@@ -371,6 +371,9 @@ const button = host?.shadowRoot?.querySelector('button');
 if (button) {
   await inspector.waitForInteractionReady(button, 'click', 5000);
 }
+
+// Or search the document and every open shadow root in it
+const scopes = [document, ...inspector.findOpenShadowRoots([document])];
 ```
 
 ### 3. Not Handling Async Nature

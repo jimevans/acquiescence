@@ -22,25 +22,21 @@ pnpm add acquiescence
 
 ## Requirements
 
-- **Node.js**: Version 16 or higher (for build tools)
-- **Browser**: Modern browsers with ES2020 support
+- **Node.js**: Version 22.12 or higher, for development (building, testing, and building the documentation). The library itself runs in a browser, or in Node.js with jsdom.
+- **Browser**: Modern browsers with ES2022 support
   - Chrome/Edge 80+
   - Firefox 80+
   - Safari 14+
 
 ## Import Options
 
-### ES Modules (Recommended)
+### ES Modules
 
 ```typescript
 import { ElementStateInspector } from 'acquiescence';
 ```
 
-### CommonJS
-
-```javascript
-const { ElementStateInspector } = require('acquiescence');
-```
+The package is ESM-only: it cannot be loaded with `require()`.
 
 ### Browser Bundle
 
@@ -52,6 +48,8 @@ If you need to use Acquiescence directly in a browser without a build step, you 
   const inspector = new Acquiescence.ElementStateInspector();
 </script>
 ```
+
+Every export is a property of the `Acquiescence` global: `ElementStateInspector`, `AriaSnapshotGenerator`, `AriaSnapshotMatcher`, `DomSnapshotGenerator`, `ElementDescriber`, `ActionRecorder`, `TimeoutWaiter`, and `RequestAnimationFrameWaiter`.
 
 ## TypeScript Support
 

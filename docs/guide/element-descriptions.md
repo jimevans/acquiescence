@@ -26,11 +26,13 @@ Each element's facts, with white space normalized:
 
 | Property | Holds |
 | --- | --- |
+| `element` | The element itself |
 | `tagName` | The lower-case tag name |
 | `role` | The ARIA role, explicit or implicit, or `null` |
 | `name` | The accessible name |
-| `labels` | The texts of its labels, as `ElementStateInspector.findElementsByLabel` matches them: the elements it is labelled by, its `aria-label`, or its `label` elements |
+| `labels` | The texts of its labels, as `ElementStateInspector.findElementsByLabel` matches them: the elements it is labelled by, its `aria-label`, or its `label` elements; `ElementStateInspector.getElementLabels` returns the same texts, before white space is normalized |
 | `placeholder`, `alt`, `title` | Those attributes' values, or `null` |
+| `nameAttribute`, `type` | The `name` and `type` attributes' values, as form fields, frames, and inputs have, or `null` |
 | `testId` | The value of the test ID attribute, `data-testid` unless `testIdAttribute` says otherwise, or `null` |
 | `text` | The rendered text of an HTML element |
 | `id` | The ID, or `null` |

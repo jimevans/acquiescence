@@ -17,6 +17,10 @@ export type ElementFacts = {
   labels: string[],
   placeholder: string | null,
   alt: string | null,
+  // The value of the name attribute, as form fields and frames have.
+  nameAttribute: string | null,
+  // The value of the type attribute, as inputs have.
+  type: string | null,
   title: string | null,
   // The value of the test ID attribute.
   testId: string | null,
@@ -104,6 +108,8 @@ class ElementDescriber {
       labels: this.inspector.getElementLabels(element).map((label) => this.normalize(label)),
       placeholder: element.getAttribute('placeholder'),
       alt: element.getAttribute('alt'),
+      nameAttribute: element.getAttribute('name'),
+      type: element.getAttribute('type'),
       title: element.getAttribute('title'),
       testId: element.getAttribute(testIdAttribute),
       text: element instanceof HTMLElement ? this.normalize(this.getRenderedText(element)) : '',
