@@ -6,12 +6,13 @@ This guide helps you diagnose and fix common issues when using Acquiescence.
 
 ### Element Not Found
 
-**Problem:** You get errors about elements not being found or being `null`.
+**Problem:** The element you pass is `null` because it is not in the page yet, so it is never ready.
 
-**Symptoms:**
+**Symptoms:** A missing element is treated as one that is not connected:
 ```typescript
 const button = document.querySelector('#my-button'); // null
-await inspector.waitForInteractionReady(button, 'click', 5000); // Error!
+await inspector.isInteractionReady(button!, 'click'); // { status: 'notready', reason: 'notconnected' }
+await inspector.waitForInteractionReady(button!, 'click', 5000); // Error: timeout waiting for interaction to be ready
 ```
 
 **Solutions:**

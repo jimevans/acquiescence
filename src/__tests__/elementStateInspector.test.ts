@@ -638,6 +638,12 @@ describe('ElementStateInspector', () => {
       expect(result.received).toBe('error:notconnected');
     });
 
+    it('should return error:notconnected for a missing element', async () => {
+      const result = await inspector.queryElementState(null as unknown as Element, 'enabled');
+
+      expect(result).toEqual({ matches: false, received: 'error:notconnected' });
+    });
+
     it('should throw for unexpected element state', async () => {
       const button = document.createElement('button');
       container.appendChild(button);
@@ -1223,6 +1229,18 @@ describe('ElementStateInspector', () => {
 
       const result = await inspector.isInteractionReady(button, 'click');
       expect(result).toEqual({ status: 'notready', reason: 'notconnected' });
+    });
+
+    // A caller without types can pass no element; it is not connected, and the stability check does not wait for it.
+    testIf(isNativeDom(), 'should report a missing element as not connected, for its stability too', async () => {
+      const missing = null as unknown as Element;
+
+      const ready = await inspector.isInteractionReady(missing, 'click');
+      const states = await inspector.queryElementStates(missing, ['stable', 'visible']);
+
+      expect(ready).toEqual({ status: 'notready', reason: 'notconnected' });
+      expect(states).toEqual({ status: 'error', message: 'notconnected' });
+      await expect(inspector.waitForInteractionReady(missing, 'click', 50)).rejects.toThrow('timeout waiting for interaction to be ready');
     });
 
     testIf(isNativeDom(), 'should report the interaction point as an offset from the in-view center point', async () => {

@@ -899,11 +899,15 @@ class ElementStateInspector {
 
   /**
    * Finds the nearest element from a node, based on the behavior.
-   * @param node {Node} The node to find the element from.
+   * @param node {Node | null | undefined} The node to find the element from; a caller without types can pass none.
    * @param behavior { 'none' | 'follow-label' | 'no-follow-label' | 'button-link' } The behavior to use.
-   * @returns {Element | null} The nearest element from the node, or null if no element is found.
+   * @returns {Element | null} The nearest element from the node, or null if no element is found or no node given.
    */
-  private findElementFromNode(node: Node, behavior: 'none' | 'follow-label' | 'no-follow-label' | 'button-link'): Element | null {
+  private findElementFromNode(node: Node | null | undefined, behavior: 'none' | 'follow-label' | 'no-follow-label' | 'button-link'): Element | null {
+    if (!node) {
+      return null;
+    }
+
     let element = node.nodeType === Node.ELEMENT_NODE ? node as Element : node.parentElement;
     if (!element) {
       return null;
