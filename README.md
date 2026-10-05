@@ -26,6 +26,7 @@ Perfect for:
 - **🚀 TypeScript First** - Built with TypeScript for excellent type safety and IntelliSense support in your IDE
 - **♿ Accessibility Snapshots** - Describe a page as assistive technology sees it, in a format compatible with Playwright's aria snapshots, with refs to act on and templates to match
 - **📸 DOM Snapshots** - Record a document, with the state of its inputs, scroll positions, and shadow roots, in the format of the snapshots in Playwright's traces
+- **🏷️ Element Descriptions** - Describe the element a user acts on by the facts a tool can name it by: role, accessible name, labels, attributes, text, and a CSS path
 - **🌐 Shadow DOM Support** - Full support for Shadow DOM, including closed shadow roots and composed tree traversal
 - **⚡ Performance Optimized** - Smart caching of computed styles and efficient polling strategies for minimal performance impact
 
@@ -235,6 +236,19 @@ console.log(snapshot.html); // ['HTML', {}, ['HEAD', ...], ['BODY', ...]]
 
 See the [DOM Snapshots guide](https://jimevans.github.io/acquiescence/guide/dom-snapshots) for the format and the state recorded.
 
+### Element Descriptions
+
+Describe the element a user acts on, such as for writing a locator for it: its role, accessible name, labels, attributes, text, and a CSS path, and the same for its nameable ancestors.
+
+```typescript
+import { ElementDescriber } from 'acquiescence';
+
+const description = new ElementDescriber().describe(clickedElement);
+console.log(description.target.role, description.target.name, description.target.cssPath);
+```
+
+See the [Element Descriptions guide](https://jimevans.github.io/acquiescence/guide/element-descriptions).
+
 ## Browser Support
 
 Acquiescence can be used in both Node.js environments (with jsdom) and directly in the browser.
@@ -278,6 +292,11 @@ The main class for querying element states and waiting for interactions.
 ### `DomSnapshotGenerator`
 
 - `generate(document, options?)` - Take a snapshot of a document for a trace viewer; returns its `html` tree, `doctype`, `viewport`, `url`, and timings
+
+### `ElementDescriber`
+
+- `describe(element, options?)` - Describe the element a user acting on an element acts on, and its nameable ancestors
+- `getActionTarget(element)` - Get the element a user acting on an element acts on
 
 For complete API documentation, see the [full API reference](https://yourusername.github.io/element-state/api/).
 

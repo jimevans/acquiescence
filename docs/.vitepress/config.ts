@@ -35,7 +35,8 @@ export default defineConfig({
             { text: 'Interactions', link: '/guide/interactions' },
             { text: 'Stability Detection', link: '/guide/stability' },
             { text: 'Accessibility Snapshots', link: '/guide/accessibility-snapshots' },
-            { text: 'DOM Snapshots', link: '/guide/dom-snapshots' }
+            { text: 'DOM Snapshots', link: '/guide/dom-snapshots' },
+            { text: 'Element Descriptions', link: '/guide/element-descriptions' }
           ]
         },
         {

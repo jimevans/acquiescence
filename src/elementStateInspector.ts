@@ -547,17 +547,12 @@ class ElementStateInspector {
   }
 
   /**
-   * Gets a value indicating whether an element is hidden by overflow of its containing elements.
-   * @param element {Element} The element to check.
-   * @param style {CSSStyleDeclaration} The computed style of the element.
-   * @returns {boolean} True if the element is hidden by overflow; otherwise, false.
-   */
-  /**
-   * Gets the texts of an element's labels.
+   * Gets the texts of an element's labels, as findElementsByLabel matches them: the elements it is labelled by,
+   * its aria-label, or its label elements.
    * @param element The element.
    * @returns {string[]} The texts, or an empty list if the element is not labelled.
    */
-  private getElementLabels(element: Element): string[] {
+  getElementLabels(element: Element): string[] {
     const labelledBy = this.ariaUtilities.getAriaLabelledByElements(element);
     if (labelledBy) {
       return labelledBy.map((label) => this.domUtilities.getNodeText(label));
@@ -579,6 +574,12 @@ class ElementStateInspector {
     return value.replace(/\s+/g, ' ').trim();
   }
 
+  /**
+   * Gets a value indicating whether an element is hidden by overflow of its containing elements.
+   * @param element {Element} The element to check.
+   * @param style {CSSStyleDeclaration} The computed style of the element.
+   * @returns {boolean} True if the element is hidden by overflow; otherwise, false.
+   */
   private isHiddenByOverflow(element: Element, style: CSSStyleDeclaration): boolean {
     // If the element is not hidden by overflow, return false.
     if (!this.checkIsHiddenByOverflow(element, style)) {
