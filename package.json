@@ -1,6 +1,6 @@
 {
   "name": "acquiescence",
-  "version": "0.1.15",
+  "version": "0.1.16",
   "description": "Library for querying and waiting for element states, taking and matching accessibility snapshots, taking DOM snapshots, describing elements, and recording user actions",
   "keywords": [
     "accessibility",
