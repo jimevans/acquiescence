@@ -25,6 +25,7 @@ Perfect for:
 - **🎯 Precise Hit Testing** - Determine exact click points and detect element obstruction with accurate hit testing that respects Shadow DOM
 - **🚀 TypeScript First** - Built with TypeScript for excellent type safety and IntelliSense support in your IDE
 - **♿ Accessibility Snapshots** - Describe a page as assistive technology sees it, in a format compatible with Playwright's aria snapshots, with refs to act on and templates to match
+- **📸 DOM Snapshots** - Record a document, with the state of its inputs, scroll positions, and shadow roots, in the format of the snapshots in Playwright's traces
 - **🌐 Shadow DOM Support** - Full support for Shadow DOM, including closed shadow roots and composed tree traversal
 - **⚡ Performance Optimized** - Smart caching of computed styles and efficient polling strategies for minimal performance impact
 
@@ -220,6 +221,20 @@ Acquiescence computes accessible names itself, following the Accessible Name and
 
 See the [Accessibility Snapshots guide](https://jimevans.github.io/acquiescence/guide/accessibility-snapshots) for the format, refs, and template syntax.
 
+### DOM Snapshots
+
+Record a document for a trace viewer to show later, in the format of the frame snapshots in [Playwright's traces](https://playwright.dev/docs/trace-viewer): its elements and text without scripts or event handlers, with the values of inputs, scroll positions, open shadow roots, and the stylesheets script made.
+
+```typescript
+import { DomSnapshotGenerator } from 'acquiescence';
+
+const generator = new DomSnapshotGenerator();
+const snapshot = generator.generate(document, { target: document.querySelector('#save') ?? undefined });
+console.log(snapshot.html); // ['HTML', {}, ['HEAD', ...], ['BODY', ...]]
+```
+
+See the [DOM Snapshots guide](https://jimevans.github.io/acquiescence/guide/dom-snapshots) for the format and the state recorded.
+
 ## Browser Support
 
 Acquiescence can be used in both Node.js environments (with jsdom) and directly in the browser.
@@ -259,6 +274,10 @@ The main class for querying element states and waiting for interactions.
 ### `AriaSnapshotMatcher`
 
 - `match(element, template)` - Match the snapshot of an element against a template; returns `{ matches, actual }`
+
+### `DomSnapshotGenerator`
+
+- `generate(document, options?)` - Take a snapshot of a document for a trace viewer; returns its `html` tree, `doctype`, `viewport`, `url`, and timings
 
 For complete API documentation, see the [full API reference](https://yourusername.github.io/element-state/api/).
 
