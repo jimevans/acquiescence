@@ -183,7 +183,10 @@ class AriaSnapshotGenerator {
         Object.assign(node, { [state]: value });
       }
     }
-    if ((element instanceof HTMLInputElement && !this.nonTextInputTypes.includes(element.type)) || element instanceof HTMLTextAreaElement) {
+    if (element instanceof HTMLInputElement && element.type === 'password') {
+      // A password is shown as assistive technology gets it: a bullet for each character.
+      node.children.push('\u2022'.repeat([...element.value].length));
+    } else if ((element instanceof HTMLInputElement && !this.nonTextInputTypes.includes(element.type)) || element instanceof HTMLTextAreaElement) {
       node.children.push(element.value);
     }
     return node;

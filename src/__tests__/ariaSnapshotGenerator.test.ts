@@ -188,6 +188,16 @@ describe('AriaSnapshotGenerator', () => {
       `));
     });
 
+    testIf(isNativeDom(), 'should show a password as a bullet for each character, and an empty one as no text', () => {
+      container.innerHTML = '<input type="password" aria-label="Password" value="s3cr\u00e9t"><input type="password" aria-label="Empty"><input type="password" aria-label="Emoji" value="a\u{1F600}">';
+
+      expect(generator.generate(container, { refs: false }).text).toBe(unindent(`
+        - textbox "Password": \u2022\u2022\u2022\u2022\u2022\u2022
+        - textbox "Empty"
+        - textbox "Emoji": \u2022\u2022
+      `));
+    });
+
     testIf(isNativeDom(), 'should show the value of text inputs and text areas, but not of checkboxes, radio buttons, or file inputs', () => {
       container.innerHTML = '<input value="hello world"><input type="file"><input type="checkbox" checked><input type="radio"><textarea>Before</textarea>';
       expect(generator.generate(container, { refs: false }).text).toBe(unindent(`
