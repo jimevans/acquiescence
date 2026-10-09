@@ -131,6 +131,21 @@ describe('ElementDescriber', () => {
     });
   });
 
+  describe('heading name', () => {
+    testIf(isNativeDom(), 'should give the name of the first heading within the element that is named and not hidden', () => {
+      container.innerHTML = `
+        <ul>
+          <li id="card"><h3 hidden>Hidden</h3><h3 aria-hidden="true">Ignored</h3><h4></h4><h3>Blue Mug</h3><h3>Second</h3><button>Add</button></li>
+          <li id="role"><div role="heading" aria-level="3">Red Mug</div><h2 role="presentation">Not a heading</h2></li>
+          <li id="plain"><p>No heading</p></li>
+        </ul>`;
+
+      expect(describer.describe(element('#card button')).ancestors[0].headingName).toBe('Blue Mug');
+      expect(describer.describe(element('#role')).target.headingName).toBe('Red Mug');
+      expect(describer.describe(element('#plain')).target.headingName).toBeNull();
+    });
+  });
+
   describe('ancestors', () => {
     testIf(isNativeDom(), 'should describe the ancestors with a test ID, an ID, or a role, nearest first', () => {
       container.innerHTML = `

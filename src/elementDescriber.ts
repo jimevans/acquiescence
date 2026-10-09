@@ -26,6 +26,9 @@ export type ElementFacts = {
   testId: string | null,
   // The element's rendered text, or empty for an element that is not an HTML element.
   text: string,
+  // The accessible name of the first heading within the element that has one and is not hidden, as a card or a
+  // list item is told from others like it; null if there is none.
+  headingName: string | null,
   id: string | null,
   // A CSS selector for the element within its root, the document or a shadow root, which matches it alone when
   // the document is as it is now.
@@ -113,6 +116,7 @@ class ElementDescriber {
       title: element.getAttribute('title'),
       testId: element.getAttribute(testIdAttribute),
       text: element instanceof HTMLElement ? this.normalize(this.getRenderedText(element)) : '',
+      headingName: this.getHeadingName(element),
       id: element.id || null,
       cssPath: this.getCssPath(element),
       inShadowRoot: element.getRootNode() instanceof ShadowRoot,
@@ -123,6 +127,19 @@ class ElementDescriber {
   private getRenderedText(element: HTMLElement): string {
     /* istanbul ignore next -- @preserve */
     return element.innerText ?? element.textContent ?? '';
+  }
+
+  private getHeadingName(element: Element): string | null {
+    for (const heading of element.querySelectorAll('h1, h2, h3, h4, h5, h6, [role=heading]')) {
+      if (this.ariaUtilities.getAriaRole(heading) === 'heading' && !this.ariaUtilities.isHiddenForAria(heading)) {
+        const name = this.normalize(this.nameCalculator.getAccessibleName(heading));
+        if (name) {
+          return name;
+        }
+      }
+    }
+
+    return null;
   }
 
   private hasNameableRole(element: Element): boolean {
